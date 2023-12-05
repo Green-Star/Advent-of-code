@@ -61,9 +61,9 @@ fn get_final_result(transformed_data: Vec<(i64, i64)>) -> i64 {
 
 
 fn main() {
-    let data = load_file_in_memory("./input.data").unwrap();
+    let data = load_file_in_memory("./test.data").unwrap();
     let numbers = transform_data(data);
     let result = get_final_result(numbers);
 
-    println!("Final result: {}", result);
+    println!("Part 2 final result: {}", result);
 }
