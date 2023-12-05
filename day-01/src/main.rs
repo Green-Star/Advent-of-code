@@ -14,9 +14,19 @@ fn load_file_in_memory(filepath: &str) -> std::io::Result<Vec<String>> {
     Ok(data)
 }
 
-fn get_first_and_last_numbers_in_line(line: &str) -> (i64, i64) {
-    let first = 1;
-    let last = 3;
+fn get_first_and_last_numbers_in_line(line: &str) -> (u32, u32) {
+    let mut first = None;
+    let mut last = None;
+
+    for c in line.chars() {
+        if c.is_numeric() == false { continue; }
+
+        if first == None { first = Some(c); }
+        last = Some(c);
+    }
+
+    let first = first.unwrap().to_digit(10).unwrap_or(0);
+    let last = last.unwrap().to_digit(10).unwrap_or(0);
 
     println!("[{}] -> ({}, {})", line, first, last);
     (first, last)
@@ -26,7 +36,8 @@ fn transform_data(lines: Vec<String>) -> Vec<(i64, i64)> {
     let mut transformed_data = Vec::new();
 
     for line in lines {
-        transformed_data.push(get_first_and_last_numbers_in_line(&line));
+        let (x, y) = get_first_and_last_numbers_in_line(&line);
+        transformed_data.push((i64::from(x), i64::from(y)));
     }
 
     transformed_data
@@ -50,9 +61,7 @@ fn get_final_result(transformed_data: Vec<(i64, i64)>) -> i64 {
 
 
 fn main() {
-    println!("Hello, world in proper Rust!");
-
-    let data = load_file_in_memory("./test.data").unwrap();
+    let data = load_file_in_memory("./input.data").unwrap();
     let numbers = transform_data(data);
     let result = get_final_result(numbers);
 
