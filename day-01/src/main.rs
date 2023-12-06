@@ -70,20 +70,7 @@ fn get_first_and_last_numbers_in_line(line: &str) -> (u32, u32) {
 
     let first = first_number.unwrap().number.value;
     let last = last_number.unwrap().number.value;
-/*/
-    let mut first = None;
-    let mut last = None;
 
-    for c in line.chars() {
-        if c.is_numeric() == false { continue; }
-
-        if first == None { first = Some(c); }
-        last = Some(c);
-    }
-
-    let first = first.unwrap().to_digit(10).unwrap_or(0);
-    let last = last.unwrap().to_digit(10).unwrap_or(0);
-*/
     println!("[{}] -> ({}, {})", line, first, last);
     (first, last)
 }
@@ -117,7 +104,7 @@ fn get_final_result(transformed_data: Vec<(i64, i64)>) -> i64 {
 
 
 fn main() {
-    let data = load_file_in_memory("./test.data").unwrap();
+    let data = load_file_in_memory("./input.data").unwrap();
     let numbers = transform_data(data);
     let result = get_final_result(numbers);
 
