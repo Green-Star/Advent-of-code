@@ -1,4 +1,3 @@
-use core::num;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -21,13 +20,20 @@ struct Cubes {
     g: u32,
     b: u32,
 }
+#[derive(Debug)]
 struct Game {
     game_id: u32,
     cubes_set: Vec<Cubes>,
 }
 
 fn transform_data(data: Vec<String>) -> Vec<Game> {
-    Vec::new()
+    let mut result = Vec::new();
+
+    for line in data {
+        result.push(parse_game(&line));
+    }
+
+    result
 }
 
 fn parse_game(line: &str) -> Game {
@@ -92,9 +98,10 @@ fn main() {
     println!("Hello, world for the 2nd day!");
 
     let data = load_file_in_memory("./test.data").unwrap();
+    let game_list = transform_data(data);
 
-    for s in data {
-        println!("[{}]", s);
+    for l in game_list {
+        dbg!("[{}]", l);
     }
 
     let origin = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green";
