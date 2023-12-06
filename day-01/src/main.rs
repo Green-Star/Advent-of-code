@@ -14,7 +14,63 @@ fn load_file_in_memory(filepath: &str) -> std::io::Result<Vec<String>> {
     Ok(data)
 }
 
+#[derive(PartialEq, Clone)]
+struct Number {
+    char: String,
+    value: u32,
+}
+#[derive(PartialEq)]
+struct IndexedNumber {
+    index: usize,
+    number: Number,
+}
+
 fn get_first_and_last_numbers_in_line(line: &str) -> (u32, u32) {
+    let needles = [
+        Number{ char: String::from("1"), value: 1 },
+        Number{ char: String::from("2"), value: 2 },
+        Number{ char: String::from("3"), value: 3 },
+        Number{ char: String::from("4"), value: 4 },
+        Number{ char: String::from("5"), value: 5 },
+        Number{ char: String::from("6"), value: 6 },
+        Number{ char: String::from("7"), value: 7 },
+        Number{ char: String::from("8"), value: 8 },
+        Number{ char: String::from("9"), value: 9 },
+        Number{ char: String::from("one"), value: 1 },
+        Number{ char: String::from("two"), value: 2 },
+        Number{ char: String::from("three"), value: 3 },
+        Number{ char: String::from("four"), value: 4 },
+        Number{ char: String::from("five"), value: 5 },
+        Number{ char: String::from("six"), value: 6 },
+        Number{ char: String::from("seven"), value: 7 },
+        Number{ char: String::from("eight"), value: 8 },
+        Number{ char: String::from("nine"), value: 9 },
+    ];
+
+    let mut first_number = None;
+    let mut last_number = None;
+
+    for number in needles {
+        let number_first_occurence_index = line.find(&(number.char));
+        let number_last_occurence_index = line.rfind(&(number.char));
+
+        if number_first_occurence_index == None || number_last_occurence_index == None { continue; }
+
+        first_number = match first_number {
+            None => { Some(IndexedNumber { number: number.clone(), index: number_first_occurence_index.unwrap() }) },
+            Some(x) if number_first_occurence_index.unwrap() < x.index => { Some(IndexedNumber { number: number.clone(), index: number_first_occurence_index.unwrap() }) },
+            Some(x) => Some(x)
+        };
+        last_number = match last_number {
+            None => { Some(IndexedNumber { number: number.clone(), index: number_last_occurence_index.unwrap() }) },
+            Some(x) if number_last_occurence_index.unwrap() > x.index => { Some(IndexedNumber { number: number.clone(), index: number_last_occurence_index.unwrap() }) },
+            Some(x) => Some(x)
+        };
+    }
+
+    let first = first_number.unwrap().number.value;
+    let last = last_number.unwrap().number.value;
+/*/
     let mut first = None;
     let mut last = None;
 
@@ -27,7 +83,7 @@ fn get_first_and_last_numbers_in_line(line: &str) -> (u32, u32) {
 
     let first = first.unwrap().to_digit(10).unwrap_or(0);
     let last = last.unwrap().to_digit(10).unwrap_or(0);
-
+*/
     println!("[{}] -> ({}, {})", line, first, last);
     (first, last)
 }
