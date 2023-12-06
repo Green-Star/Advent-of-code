@@ -55,7 +55,14 @@ fn get_game_id(game_header: &str) -> u32 {
  }
 
 fn parse_cube_set(s: &str) -> Vec<Cubes> {
-    Vec::new()
+    let mut result = Vec::new();
+
+    let cube_sets_list = s.split(';');
+    for cube_set in cube_sets_list {
+        result.push(transform_into_cube(cube_set));
+    }
+
+    result
 }
 
 fn transform_into_cube(s: &str) -> Cubes {
@@ -103,6 +110,14 @@ fn main() {
     let s2 = "3 blue, 4 red";
     let s3 = " 1 red, 2 green, 6 blue";
     let s4 = " 2 green";
+
+    let cube_set = parse_cube_set(s1);
+    assert_eq!(cube_set, Vec::from([
+        Cubes{r:4,g:0,b:3},
+        Cubes{r:1,g:2,b:6},
+        Cubes{r:0,g:2,b:0},
+    ]));
+    dbg!("[{}]", cube_set);
 
     let cube = transform_into_cube(s2);
     assert_eq!(cube, Cubes{r:4, g:0, b:3});
