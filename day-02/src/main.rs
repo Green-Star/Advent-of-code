@@ -31,6 +31,10 @@ impl Game {
     fn is_possible(&self, max_cubes_allowed: &Cubes) -> bool {
         self.cubes_needed.r <= max_cubes_allowed.r && self.cubes_needed.g <= max_cubes_allowed.g && self.cubes_needed.b <= max_cubes_allowed.b
     }
+
+    fn power(&self) -> u32 {
+        self.cubes_needed.r * self.cubes_needed.g * self.cubes_needed.b
+    }
 }
 
 fn transform_data(data: Vec<String>) -> Vec<Game> {
@@ -124,7 +128,13 @@ fn part_01() {
 }
 
 fn part_02() {
+    let max_cubes_allowed = Cubes { r: 12, g: 13, b: 14 };
 
+    let data = load_file_in_memory("./input-02.data").unwrap();
+    let game_list = transform_data(data);
+    let final_result: u32 = game_list.iter().map(|game| game.power()).sum();
+
+    println!("Part 2 final result: {}", final_result);
 }
 
 fn main() {
