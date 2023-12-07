@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -24,6 +25,12 @@ struct Cubes {
 struct Game {
     game_id: u32,
     cubes_set: Vec<Cubes>,
+    cubes_needed: Cubes,
+}
+impl Game {
+    fn is_possible(&self, max_cubes_allowed: &Cubes) -> bool {
+        self.cubes_needed.r <= max_cubes_allowed.r && self.cubes_needed.g <= max_cubes_allowed.g && self.cubes_needed.b <= max_cubes_allowed.b
+    }
 }
 
 fn transform_data(data: Vec<String>) -> Vec<Game> {
@@ -42,9 +49,10 @@ fn parse_game(line: &str) -> Game {
     let game_list = parsed_line.last().unwrap();
 
     let game_id = get_game_id(header);
-    let cubes_set_list = parse_cube_set(game_list);
+    let cubes_set = parse_cube_set(game_list);
+    let cubes_needed = get_max_cubes_needed(&cubes_set);
 
-    Game { game_id: game_id, cubes_set: cubes_set_list }
+    Game { game_id, cubes_set, cubes_needed }
 }
 
 fn get_game_id(game_header: &str) -> u32 {
@@ -90,20 +98,34 @@ fn transform_into_cube(s: &str) -> Cubes {
     Cubes { r: red, g: green, b: blue }
 }
 
-fn get_final_result(numbers: i64) -> i64 {
-    numbers
+fn get_max_cubes_needed(cubes_set: &Vec<Cubes>) -> Cubes {
+    let mut r_max = 0;
+    let mut g_max = 0;
+    let mut b_max = 0;
+
+    for cube in cubes_set {
+        r_max = max(r_max, cube.r);
+        g_max = max(g_max, cube.g);
+        b_max = max(b_max, cube.b);
+    }
+
+    Cubes { r: r_max, g: g_max, b: b_max }
 }
+/*
+fn get_final_result(game_list: &Iterator<Game>) -> i64 {
+    game_list.map(|game| game.game_id).sum()
+}
+*/
 
 fn main() {
-    println!("Hello, world for the 2nd day!");
+    let max_cubes_allowed = Cubes { r: 12, g: 13, b: 14 };
 
     let data = load_file_in_memory("./test.data").unwrap();
     let game_list = transform_data(data);
+    let possible_game_list = game_list.iter().filter(|game| game.is_possible(&max_cubes_allowed));
+    let final_result: u32 = possible_game_list.map(|game| game.game_id).sum();
 
-    for l in game_list {
-        dbg!("[{}]", l);
-    }
-
+/*
     let origin = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green";
     parse_game(origin);
 
@@ -135,6 +157,7 @@ fn main() {
     let cube = transform_into_cube(s4);
     assert_eq!(cube, Cubes{r:0, g:2, b:0});
     dbg!("[{}]", cube);
+*/
 
-    println!("Part 1 final result: {}", 0);
+    println!("Part 1 final result: {}", final_result);
 }
