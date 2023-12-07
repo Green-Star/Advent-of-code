@@ -24,7 +24,7 @@ struct Cubes {
 #[derive(Debug)]
 struct Game {
     game_id: u32,
-    cubes_set: Vec<Cubes>,
+    _cubes_set: Vec<Cubes>,
     cubes_needed: Cubes,
 }
 impl Game {
@@ -49,10 +49,10 @@ fn parse_game(line: &str) -> Game {
     let game_list = parsed_line.last().unwrap();
 
     let game_id = get_game_id(header);
-    let cubes_set = parse_cube_set(game_list);
-    let cubes_needed = get_max_cubes_needed(&cubes_set);
+    let _cubes_set = parse_cube_set(game_list);
+    let cubes_needed = get_max_cubes_needed(&_cubes_set);
 
-    Game { game_id, cubes_set, cubes_needed }
+    Game { game_id, _cubes_set, cubes_needed }
 }
 
 fn get_game_id(game_header: &str) -> u32 {
@@ -111,53 +111,14 @@ fn get_max_cubes_needed(cubes_set: &Vec<Cubes>) -> Cubes {
 
     Cubes { r: r_max, g: g_max, b: b_max }
 }
-/*
-fn get_final_result(game_list: &Iterator<Game>) -> i64 {
-    game_list.map(|game| game.game_id).sum()
-}
-*/
 
 fn main() {
     let max_cubes_allowed = Cubes { r: 12, g: 13, b: 14 };
 
-    let data = load_file_in_memory("./test.data").unwrap();
+    let data = load_file_in_memory("./input.data").unwrap();
     let game_list = transform_data(data);
     let possible_game_list = game_list.iter().filter(|game| game.is_possible(&max_cubes_allowed));
     let final_result: u32 = possible_game_list.map(|game| game.game_id).sum();
-
-/*
-    let origin = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green";
-    parse_game(origin);
-
-    println!("Game id: {}", get_game_id("Game 1"));
-    println!("Game id: {}", get_game_id("Game 2"));
-    println!("Game id: {}", get_game_id("Game 10"));
-    println!("Game id: {}", get_game_id("Game 75"));
-    println!("Game id: {}", get_game_id("Game 100"));
-
-    let s1 = "3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green";
-    let s2 = "3 blue, 4 red";
-    let s3 = " 1 red, 2 green, 6 blue";
-    let s4 = " 2 green";
-
-    let cube_set = parse_cube_set(s1);
-    assert_eq!(cube_set, Vec::from([
-        Cubes{r:4,g:0,b:3},
-        Cubes{r:1,g:2,b:6},
-        Cubes{r:0,g:2,b:0},
-    ]));
-    dbg!("[{}]", cube_set);
-
-    let cube = transform_into_cube(s2);
-    assert_eq!(cube, Cubes{r:4, g:0, b:3});
-    dbg!("[{}]", cube);
-    let cube = transform_into_cube(s3);
-    assert_eq!(cube, Cubes{r:1, g:2, b:6});
-    dbg!("[{}]", cube);
-    let cube = transform_into_cube(s4);
-    assert_eq!(cube, Cubes{r:0, g:2, b:0});
-    dbg!("[{}]", cube);
-*/
 
     println!("Part 1 final result: {}", final_result);
 }
