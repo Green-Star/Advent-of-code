@@ -112,13 +112,22 @@ fn get_max_cubes_needed(cubes_set: &Vec<Cubes>) -> Cubes {
     Cubes { r: r_max, g: g_max, b: b_max }
 }
 
-fn main() {
+fn part_01() {
     let max_cubes_allowed = Cubes { r: 12, g: 13, b: 14 };
 
-    let data = load_file_in_memory("./input.data").unwrap();
+    let data = load_file_in_memory("./input-01.data").unwrap();
     let game_list = transform_data(data);
     let possible_game_list = game_list.iter().filter(|game| game.is_possible(&max_cubes_allowed));
     let final_result: u32 = possible_game_list.map(|game| game.game_id).sum();
 
     println!("Part 1 final result: {}", final_result);
+}
+
+fn part_02() {
+
+}
+
+fn main() {
+    part_01();
+    part_02();
 }
