@@ -128,8 +128,6 @@ fn part_01() {
 }
 
 fn part_02() {
-    let max_cubes_allowed = Cubes { r: 12, g: 13, b: 14 };
-
     let data = load_file_in_memory("./input-02.data").unwrap();
     let game_list = transform_data(data);
     let final_result: u32 = game_list.iter().map(|game| game.power()).sum();
