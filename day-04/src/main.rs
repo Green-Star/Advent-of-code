@@ -26,7 +26,7 @@ fn parse_number_list<T: std::str::FromStr>(s: &str) -> Vec<T> {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Card {
     game_id: u32,
     winning_number_list: Vec<u32>,
@@ -114,6 +114,57 @@ fn part_01() {
 }
 
 fn part_02() {
+    let data = load_file_in_memory("./test-02.data").unwrap();
+    let card_list = transform_data(data);
+
+    let processed_card_list: Vec<Card> = process_card_list(&card_list);
+    let final_result = u64::try_from(processed_card_list.len()).unwrap();
+
+    println!("Part 2 final result: {}", final_result);
+}
+
+fn process_card_list(origin: &Vec<Card>) -> Vec<Card> {
+    let mut copies: Vec<Card> = origin.clone();
+    let mut processed_card = Vec::new();
+
+    println!("Processing winning cards...");
+
+    loop {
+        let (mut done, new) = process_cards(copies, origin);
+        processed_card.append(&mut done);
+        copies = new;
+        if copies.is_empty() { break; }
+        println!("Done! New loop starting on the new cards granted...");
+    }
+
+    println!("Winning cards processed!");
+
+    processed_card
+}
+
+fn process_cards(cards_to_process: Vec<Card>, origin_card_list: &Vec<Card>) -> (Vec<Card>, Vec<Card>) {
+    let mut processed = Vec::new();
+    let mut new_copies = Vec::new();
+
+    for card in cards_to_process {
+        new_copies.append(&mut get_copies_from_card(&card, origin_card_list));
+        processed.push(card.clone());
+    }
+
+    (processed, new_copies)
+}
+
+fn get_copies_from_card(card: &Card, origin: &Vec<Card>) -> Vec<Card> {
+    let mut copies = Vec::new();
+    let matched = get_match_occurences(card);
+
+    println!("Get {} copies, starting from index {} included", matched, card.game_id);
+    for i in 0..matched {
+        println!("Adding card {} from card {}", origin[usize::try_from(card.game_id + i).unwrap()].clone().game_id, card.game_id);
+        copies.push(origin[usize::try_from(card.game_id + i).unwrap()].clone());
+    }
+
+    copies
 }
 
 fn main() {
