@@ -1,7 +1,5 @@
-use std::cmp::max;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::str::Lines;
 
 fn load_file_in_memory(filepath: &str) -> std::io::Result<Vec<String>> {
     let file = File::open(filepath)?;
@@ -79,7 +77,7 @@ fn parse_card_header(header: &str) -> (u32, Vec<u32>) {
     let winning_number_list = parse_number_list(parsed_header.last().unwrap());
 
     let mut game_id = 0;
-    for s in card_header.split(" ") {
+    for s in card_header.split(" ").filter(|s| !s.is_empty()) {
         match s {
             "Card" => {},
             id => { game_id = id.parse().unwrap() },
@@ -107,7 +105,7 @@ fn get_match_occurences(cards: &Card) -> u32 {
 }
 
 fn part_01() {
-    let data = load_file_in_memory("./test-01.data").unwrap();
+    let data = load_file_in_memory("./input-01.data").unwrap();
     let card_list = transform_data(data);
     let occurences_list: Vec<u32> = card_list.iter().map(|card| get_match_occurences(card)).collect();
     let final_result: u64 = occurences_list.iter().map(|o| get_card_value(*o)).sum();
