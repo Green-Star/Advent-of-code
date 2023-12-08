@@ -102,19 +102,17 @@ fn get_card_value(match_occurences: u32) -> u64 {
 }
 
 
-fn get_match_occurences(cards: Card) -> u32 {
+fn get_match_occurences(cards: &Card) -> u32 {
     cards.winning_number_list.iter().map(|win| get_winning_number_match_occurences(win, &cards.number_list)).sum()
 }
 
 fn part_01() {
     let data = load_file_in_memory("./test-01.data").unwrap();
     let card_list = transform_data(data);
+    let occurences_list: Vec<u32> = card_list.iter().map(|card| get_match_occurences(card)).collect();
+    let final_result: u64 = occurences_list.iter().map(|o| get_card_value(*o)).sum();
 
-    for s in card_list {
-        dbg!("[{}]", s);
-    }
-
-    println!("Part 1 final result: {}", 0);
+    println!("Part 1 final result: {}", final_result);
 }
 
 fn part_02() {
