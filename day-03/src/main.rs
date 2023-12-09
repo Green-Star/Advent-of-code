@@ -1,5 +1,7 @@
+use core::num;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use std::ops::IndexMut;
 
 fn load_file_in_memory(filepath: &str) -> std::io::Result<Vec<String>> {
     let file = File::open(filepath)?;
@@ -14,11 +16,364 @@ fn load_file_in_memory(filepath: &str) -> std::io::Result<Vec<String>> {
     Ok(data)
 }
 
-fn part_01() {
+fn transform_data(data: Vec<String>) -> Vec<Vec<char>> {
+    let mut lines = Vec::new();
 
+    for line in data {
+        let mut cols = Vec::new();
+        for char in line.chars() {
+            cols.push(char);
+        }
+        lines.push(cols);
+    }
+
+    lines
+}
+
+fn grid_traversal(grid: &Vec<Vec<char>>) -> Vec<u32> {
+    let symbols_positions = extract_symbols_position_from_grid(grid);
+
+    Vec::new()
+}
+
+struct Position {
+    line: usize,
+    column: usize,
+}
+
+
+fn analyze_symbol(grid: &Vec<Vec<char>>, index: &Position) -> Vec<u32> {
+    let mut numbers_around_symbol = Vec::new();
+
+    /* Searching for numbers on the line before, if it exists */
+    if index.line > 0 {
+        /* Search starting point is in the same as the symbol position, but one row above */
+        let mut numbers_above = get_numbers_on_line(grid, &Position { line: index.line - 1, column: index.column });
+        numbers_around_symbol.append(&mut numbers_above);
+    }
+
+    /* Searching for numbers before */
+    if index.column > 0 {
+        let mut left_numbers = get_numbers_ending_at_position(grid, &Position { line: index.line, column: index.column - 1});
+        numbers_around_symbol.append(&mut left_numbers);
+    }
+    /* and after the symbol */
+    if index.column + 1 < grid[index.line].len() {
+        let mut right_numbers = get_numbers_starting_at_position(grid, &Position { line: index.line, column: index.column + 1});
+        numbers_around_symbol.append(&mut right_numbers);
+    }
+
+    /* Searching for numbers on the line after, if it exists */
+    if index.line + 1 < grid.len() {
+        /* Search starting point is in the same as the symbol position, but one row below */
+        let mut numbers_below = get_numbers_on_line(grid, &Position { line: index.line + 1, column: index.column });
+        numbers_around_symbol.append(&mut numbers_below);
+    }
+
+    numbers_around_symbol
+}
+
+fn get_numbers_starting_at_position(grid: &Vec<Vec<char>>, position: &Position) -> Vec<u32> {
+    if !(grid[position.line][position.column].is_numeric()) { return [].to_vec() }
+
+    let end_index;
+    if position.column + 1 >= grid[position.line].len() {
+        end_index = position.column + 1;
+    }
+    else {
+        end_index = find_end_index_of_number(grid, &Position { line: position.line, column: position.column + 1 });
+    }
+
+    [ get_number(&grid[position.line][position.column .. end_index]) ].to_vec()
+}
+fn find_end_index_of_number(grid: &Vec<Vec<char>>, position: &Position) -> usize {
+    if !(grid[position.line][position.column].is_numeric()) { return position.column }
+    if position.column + 1 >= grid[position.line].len() { return position.column + 1 }
+    return find_end_index_of_number(grid, &Position { line: position.line, column: position.column + 1 })
+}
+fn get_numbers_ending_at_position(grid: &Vec<Vec<char>>, position: &Position) -> Vec<u32> {
+    if !(grid[position.line][position.column].is_numeric()) { return [].to_vec() }
+
+    /* column + 1 (since the end index is the first index after the number) */
+    let end_index = position.column + 1;
+    let start_index;
+    if position.column == 0 {
+        start_index = 0;
+    } else {
+        start_index = find_start_index_of_number(grid, &Position { line: position.line, column: position.column - 1 });
+    }
+
+    [ get_number(&grid[position.line][start_index .. end_index]) ].to_vec()
+}
+fn find_start_index_of_number(grid: &Vec<Vec<char>>, position: &Position) -> usize {
+    if !(grid[position.line][position.column].is_numeric()) { return position.column + 1 }
+    if position.column == 0 { return position.column }
+    return find_start_index_of_number(grid, &Position { line: position.line, column: position.column - 1 })
+}
+
+fn get_numbers_on_line(grid: &Vec<Vec<char>>, index: &Position) -> Vec<u32> {
+    let mut number_on_line = Vec::new();
+
+    /* Check character at podition, 3 possibilites:
+        . the character is '.' -> Check if there is a number ending on the left or starting on the right of this caracter
+        . the character is a digit -> Extract this number and return it
+        . the character is a symbol -> Do nothing, it will be analyzed on its own
+     */
+    match grid[index.line][index.column] {
+        '.' => {
+            /* Searching for numbers before */
+            if index.column > 0 {
+                number_on_line.append(&mut get_numbers_ending_at_position(grid, &Position { line: index.line, column: index.column - 1}));
+            }
+            /* and after the symbol */
+            if index.column + 1 < grid[index.line].len() {
+                number_on_line.append(&mut get_numbers_starting_at_position(grid, &Position { line: index.line, column: index.column + 1}));
+
+            }
+        },
+        c => {
+            if c.is_numeric() {
+                let number_start_index = find_start_index_of_number(grid, index);
+                let number_end_index = find_end_index_of_number(grid, index);
+
+                number_on_line.push(get_number(&grid[index.line][number_start_index .. number_end_index]));
+            } else {
+
+            }
+        }
+    }
+
+    number_on_line
+}
+
+/*
+fn get_number_indexes_at_position(grid: &Vec<Vec<char>>, position: &Position) -> Option<(usize, usize)> {
+    if position.line < 0 || position.line >= grid.len() { return None }
+    if position.column < 0 || position.column >= grid[position.line].len() { return None }
+    if !(grid[position.line][position.column].is_numeric()) { return None }
+
+    let start_index;
+    let end_index;
+
+    let before = Position { line: position.line, column: position.column - 1 };
+    match get_number_indexes_at_position(grid, &before) {
+        None => start_index = position.column,
+        Some((index, _)) => start_index = index,
+    }
+
+    let after = Position { line: position.line, column: position.column + 1 };
+    match get_number_indexes_at_position(grid, &after) {
+        None => end_index = position.column,
+        Some((_, index)) => end_index = index,
+    }
+
+    Some((start_index, end_index))
+}
+*/
+/*
+fn get_number_indexes_at_position(grid: &Vec<Vec<char>>, position: &Position) -> Option<(usize, usize)> {
+    /* First check: is our character a digit? */
+    if !(grid[position.line][position.column].is_numeric()) { return None }
+
+
+
+    /* Security checks, a bit useless */
+    if position.line >= grid.len() { return None }
+    /* Nothing when being outside if the grid */
+    if position.column >= grid[position.line].len() { return None }
+    /* Stop if the character at position is not a digit */
+    if !(grid[position.line][position.column].is_numeric()) { return None }
+
+    /* First column is numeric -> we can't go before this column, so 0 will be the start index */
+    if position.column == 0 { return Some((position.line, position.column))}
+
+    println!("*** At position [{}][{}]", position.line, position.column);
+
+    let start_index;
+    let end_index;
+
+    let before = Position { line: position.line, column: position.column - 1 };
+    match get_number_indexes_at_position(grid, &before) {
+        None => start_index = position.column,
+        Some((index, _)) => start_index = index,
+    }
+
+    let after = Position { line: position.line, column: position.column + 1 };
+    match get_number_indexes_at_position(grid, &after) {
+        None => end_index = position.column,
+        Some((_, index)) => end_index = index,
+    }
+
+    Some((start_index, end_index))
+}
+
+fn get_number_start_index(grid: &Vec<Vec<char>>, position: &Position) -> Option<usize> {
+    /* Security checks, a bit useless */
+    if position.line >= grid.len() { return None }
+    if position.column >= grid[position.line].len() { return None }
+
+    /* Character at position is not a digit */
+    /* -> The previous position was the beginning of the number, so the number's start index is (our position + 1) */
+    if !(grid[position.line][position.column].is_numeric()) { return Some(position.column + 1) }
+
+    /* First column is numeric -> we can't go before this column, so 0 will be the start index */
+    if position.column == 0 { return Some(position.column) }
+
+    /* Character at position is a digit, and there's still characters before, so let's keep searching backward */
+    get_number_start_index(grid, &Position { line: position.line, column: position.column - 1 })
+}
+
+fn get_number_end_index(grid: &Vec<Vec<char>>, position: &Position) -> Option<usize> {
+    /* Security checks, a bit useless */
+    if position.line >= grid.len() { return None }
+    if position.column >= grid[position.line].len() { return None }
+
+    /* Character at position is not a digit */
+    /* -> The previous position was the end of the number, so the number's end index is (our position - 1) */
+    if !(grid[position.line][position.column].is_numeric()) { return Some(position.column - 1) }
+
+    /* Last column is numeric -> we can't go beyond this column, so it will be the end index */
+    if position.column == grid.len() { return Some(position.column) }
+
+    /* Character at position is a digit, and there's still characters after it, so let's keep searching */
+    get_number_start_index(grid, &Position { line: position.line, column: position.column + 1 })
+}
+
+fn get_number_slice_indexes() -> (usize, usize) {
+(0,0)
+}
+*/
+
+fn get_number(grid: &[char]) -> u32 {
+    let mut number = 0;
+
+    dbg!(grid);
+
+    for char in grid {
+        number *= 10;
+        number += char.to_digit(10).unwrap_or(0);
+        dbg!("*{}*", number);
+    }
+
+    dbg!(number);
+
+    number
+}
+
+fn extract_symbols_position_from_grid(grid: &Vec<Vec<char>>) -> Vec<Position> {
+    let mut symbols_positions = Vec::new();
+
+    for i in 0..grid.len() {
+        for j in 0..grid[i].len() {
+            match grid[i][j] {
+                '.' => continue,
+                c => {
+                    if c.is_numeric() { continue; }
+                    else { symbols_positions.push(Position { line: i, column: j }); }
+                },
+            }
+        }
+    }
+
+    symbols_positions
+}
+
+fn test_01(grid: &Vec<Vec<char>>, line: usize, column: usize) {
+    let test = analyze_symbol(&grid, &Position { line: line, column: column });
+    println!("{}", grid[line][column]);
+    for n in test {
+        println!("[{}]", n);
+    }
+}
+
+fn part_01() {
+    let data = load_file_in_memory("./test-01.data").unwrap();
+    let grid = transform_data(data);
+    let number_list = grid_traversal(&grid);
+    let final_result = 0;
+
+    test_01(&grid, 1, 3);
+    test_01(&grid, 3, 6);
+    test_01(&grid, 4, 3);
+    test_01(&grid, 5, 5);
+    test_01(&grid, 8, 3);
+    test_01(&grid, 8, 5);
+
+
+
+/*
+	let array = [0,1,2,3,4,5,6,7,8,9,10].to_vec();
+
+	let test = &array[0 .. 0];
+	dbg!(test);
+	let test = &array[0 .. 1];
+	dbg!(test);
+	let test = &array[3 .. 4];
+	dbg!(test);
+	let test = &array[8 .. 10];
+	dbg!(test);
+	let test = &array[8 .. 11];
+	dbg!(test);
+*/
+
+/*
+    let test = get_number_indexes_at_position(&grid, &Position { line: 0, column: 2 });
+    match test {
+        None => println!("No number at [{}][{}]", 0, 2),
+        Some((d, e)) => println!("Number at ({}, {})", d, e),
+    }
+    */
+
+    /*
+    let test = get_number_indexes_at_position(&grid, &Position { line: 0, column: 3 });
+    match test {
+        None => println!("No number at [{}][{}]", 0, 3),
+        Some((d, e)) => println!("Number at ({}, {})", d, e),
+    }
+    let test = get_number_indexes_at_position(&grid, &Position { line: 0, column: 4 });
+    match test {
+        None => println!("No number at [{}][{}]", 0, 4),
+        Some((d, e)) => println!("Number at ({}, {})", d, e),
+    }
+
+    let test = get_number_indexes_at_position(&grid, &Position { line: 1, column: 2 });
+    match test {
+        None => println!("No number at [{}][{}]", 1, 2),
+        Some((d, e)) => println!("Number at ({}, {})", d, e),
+    }
+    let test = get_number_indexes_at_position(&grid, &Position { line: 1, column: 3 });
+    match test {
+        None => println!("No number at [{}][{}]", 1, 3),
+        Some((d, e)) => println!("Number at ({}, {})", d, e),
+    }
+    let test = get_number_indexes_at_position(&grid, &Position { line: 1, column: 4 });
+    match test {
+        None => println!("No number at [{}][{}]", 1, 4),
+        Some((d, e)) => println!("Number at ({}, {})", d, e),
+    }
+
+    let test = get_number_indexes_at_position(&grid, &Position { line: 2, column: 2 });
+    match test {
+        None => println!("No number at [{}][{}]", 2, 2),
+        Some((d, e)) => println!("Number at ({}, {})", d, e),
+    }
+    let test = get_number_indexes_at_position(&grid, &Position { line: 2, column: 3 });
+    match test {
+        None => println!("No number at [{}][{}]", 2, 3),
+        Some((d, e)) => println!("Number at ({}, {})", d, e),
+    }
+    let test = get_number_indexes_at_position(&grid, &Position { line: 2, column: 4 });
+    match test {
+        None => println!("No number at [{}][{}]", 2, 4),
+        Some((d, e)) => println!("Number at ({}, {})", d, e),
+    }
+    */
+
+    println!("Part 1 final result: {}", final_result);
 }
 
 fn part_02() {
+//    let data = load_file_in_memory("./test-02.data").unwrap();
 
 }
 
