@@ -196,7 +196,7 @@ fn extract_seeds_part_02(line: &str) -> Vec<i128> {
 }
 
 fn part_02() {
-    let data = load_file_in_memory("./test-02.data").unwrap();
+    let data = load_file_in_memory("./input-02.data").unwrap();
     let (seeds, almanac_list) = transform_data_part_02(data);
     let locations: Vec<i128> = seeds.into_iter().map(|seed| almanac_list.iter().fold(seed, |seed, almanac| almanac.transform(seed))).collect();
     let final_result = locations.iter().reduce(|location_min, location| min(location_min, location)).unwrap();
@@ -205,18 +205,6 @@ fn part_02() {
 }
 
 fn main() {
-
-    let seed = 79;
-    let range = 14;
-    let mut test: Vec<i128> = Vec::new();
-    test.append(&mut (seed .. seed+range).into_iter().collect());
-    let seed = 55;
-    let range = 13;
-    test.append(&mut (seed .. seed+range).into_iter().collect());
-    for i in test {
-        println!("[{i}]");
-    }
-
     part_01();
     part_02();
 }
