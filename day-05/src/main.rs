@@ -94,7 +94,7 @@ fn extract_seeds(line: &str) -> Vec<i128> {
     seeds
 }
 
-fn transform_data(data: Vec<String>) -> (Vec<i128>, Vec<Almanac>) {
+fn transform_data_part_01(data: Vec<String>) -> (Vec<i128>, Vec<Almanac>) {
     let mut seeds = [0, 1].to_vec();
     let mut book = Vec::new();
     let mut almanac_lines = Vec::new();
@@ -136,7 +136,7 @@ fn build_almanac_entry(data: &str) -> AlmanacLines {
 
 fn part_01() {
     let data = load_file_in_memory("./input-01.data").unwrap();
-    let (seeds, almanac_list) = transform_data(data);
+    let (seeds, almanac_list) = transform_data_part_01(data);
     let locations: Vec<i128> = seeds.into_iter().map(|seed| almanac_list.iter().fold(seed, |seed, almanac| almanac.transform(seed))).collect();
     let final_result = locations.iter().reduce(|location_min, location| min(location_min, location)).unwrap();
 
@@ -144,6 +144,7 @@ fn part_01() {
 }
 
 fn part_02() {
+    let data = load_file_in_memory("./test-02.data").unwrap();
     let final_result = 0;
 
     println!("Part 2 final result: {}", final_result);
