@@ -1,5 +1,6 @@
+use std::cmp::min;
 use std::fs::File;
-use std::{i128, result};
+use std::i128;
 use std::io::{BufRead, BufReader};
 
 fn load_file_in_memory(filepath: &str) -> std::io::Result<Vec<String>> {
@@ -29,7 +30,7 @@ fn parse_number_list<T: std::str::FromStr>(s: &str) -> Vec<T> {
 
 pub trait InsideExt
 {
-    fn inside<T>(&self, start: T, end: T) -> bool {
+    fn inside<T>(&self, _start: T, _end: T) -> bool {
         true
     }
 }
@@ -70,8 +71,8 @@ struct Almanac {
 }
 impl std::fmt::Display for Almanac {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Almanac(");
-        for e in &self.entries { write!(f, "{}", e); };
+        write!(f, "Almanac(").unwrap();
+        for e in &self.entries { write!(f, "{}", e).unwrap(); };
         write!(f, ")")
     }
 }
@@ -137,12 +138,7 @@ fn part_01() {
     let data = load_file_in_memory("./test-01.data").unwrap();
     let (seeds, almanac_list) = transform_data(data);
     let locations: Vec<i128> = seeds.into_iter().map(|seed| almanac_list.iter().fold(seed, |seed, almanac| almanac.transform(seed))).collect();
-
-    for s in locations {
-        println!("{}", s);
-    }
-
-    let final_result: u64 = 0;
+    let final_result = locations.iter().reduce(|location_min, location| min(location_min, location)).unwrap();
 
     println!("Part 1 final result: {}", final_result);
 }
