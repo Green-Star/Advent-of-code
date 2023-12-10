@@ -135,7 +135,7 @@ fn build_almanac_entry(data: &str) -> AlmanacLines {
 }
 
 fn part_01() {
-    let data = load_file_in_memory("./test-01.data").unwrap();
+    let data = load_file_in_memory("./input-01.data").unwrap();
     let (seeds, almanac_list) = transform_data(data);
     let locations: Vec<i128> = seeds.into_iter().map(|seed| almanac_list.iter().fold(seed, |seed, almanac| almanac.transform(seed))).collect();
     let final_result = locations.iter().reduce(|location_min, location| min(location_min, location)).unwrap();
