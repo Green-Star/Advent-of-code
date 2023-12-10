@@ -135,12 +135,10 @@ fn build_almanac_entry(data: &str) -> AlmanacLines {
 
 fn part_01() {
     let data = load_file_in_memory("./test-01.data").unwrap();
-    let (seeds, almanac) = transform_data(data);
+    let (seeds, almanac_list) = transform_data(data);
+    let locations: Vec<i128> = seeds.into_iter().map(|seed| almanac_list.iter().fold(seed, |seed, almanac| almanac.transform(seed))).collect();
 
-    for s in seeds {
-        print!("[{}], ", s);
-    }
-    for s in almanac {
+    for s in locations {
         println!("{}", s);
     }
 
@@ -156,10 +154,12 @@ fn part_02() {
 }
 
 fn main() {
+/*
     let vec = [Test{}, Test{}, Test{}, Test{}, Test{}].to_vec();
 
     let result = vec.iter().fold(1, |x, item| item.transform(x));
     println!("Result: {}", result);
+*/
 
 //    let test = 12.is_inside_right_open_interval(0, 1);
 //    println!(":: {}", test);
@@ -171,13 +171,6 @@ fn main() {
         Ok(x) => println!("Incroyabe: {}", x),
     }
 */
-
-    let mut test = Vec::new();
-    let mut a: Vec<&str> = Vec::new();
-
-    a.push("Dello");
-    a.push("Wolrd");
-    test.push(a);
 
     part_01();
     part_02();
