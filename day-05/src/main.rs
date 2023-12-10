@@ -25,8 +25,46 @@ fn parse_number_list<T: std::str::FromStr>(s: &str) -> Vec<T> {
 }
 
 
+pub trait InsideExt {
+    fn inside<T>(&self, start: T, end: T) -> bool {
+        true
+    }
+}
+impl InsideExt for i128 {}
+impl InsideExt for u64 {}
 
+#[derive(Debug, Clone)]
+struct AlmanacLines {
+    source: i128,
+    range: i128,
+    destination: i128,
+}
+impl AlmanacLines {
+    /*
+    fn transform<T: InExt<T>>(&self, x: i128) -> Result<i128, ()> {
+        if x.inside(0, 1) { return Ok(x) }
+        Err(())
+    }
+    */
 
+    fn transform<T: InsideExt>(&self, x: T) -> Result<T, ()> {
+        if x.inside(0, 1) { return Ok(x) }
+        Err(())
+    }
+}
+
+#[derive(Debug, Clone)]
+struct Almanac {
+    entries: Vec<AlmanacLines>,
+}
+impl Almanac {
+    fn transform(&self, x: i128) -> i128 {
+        for line in &self.entries {
+;
+        }
+        if (0 as u64).inside(0, 1) { 1 } else { 0 }
+    }
+}
 
 
 fn transform_data(data: Vec<String>) -> Vec<Vec<char>> {
@@ -62,6 +100,14 @@ fn main() {
 
     let result = vec.iter().fold(1, |x, item| item.transform(x));
     println!("Result: {}", result);
+
+    let a = AlmanacLines{destination: 0, range: 0, source: 0};
+    let test = a.transform(12 as i128);
+    let test = a.transform(12 as u64);
+    match test {
+        Err(_) => println!("Pas bon!"),
+        Ok(x) => println!("Incroyabe: {}", x),
+    }
 
     part_01();
     part_02();
