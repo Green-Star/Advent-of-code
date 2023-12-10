@@ -88,14 +88,14 @@ impl Almanac {
     }
 }
 
-fn extract_seeds(line: &str) -> Vec<i128> {
+fn extract_seeds_part_01(line: &str) -> Vec<i128> {
     let mut parsed_line = line.split(":");
     let (_, seeds) = (parsed_line.next(), parse_number_list(parsed_line.next().unwrap()));
     seeds
 }
 
 fn transform_data_part_01(data: Vec<String>) -> (Vec<i128>, Vec<Almanac>) {
-    let mut seeds = [0, 1].to_vec();
+    let mut seeds = Vec::new();
     let mut book = Vec::new();
     let mut almanac_lines = Vec::new();
 
@@ -104,7 +104,7 @@ fn transform_data_part_01(data: Vec<String>) -> (Vec<i128>, Vec<Almanac>) {
         /* if line.match: seeds: XXX, XXX */
         /*  Build seeds */
         if line.starts_with("seeds:") {
-            seeds = extract_seeds(&line);
+            seeds = extract_seeds_part_01(&line);
         }
         /* Build almanach */
         else if line.ends_with("map:") {
@@ -143,41 +143,80 @@ fn part_01() {
     println!("Part 1 final result: {}", final_result);
 }
 
+
+fn transform_data_part_02(data: Vec<String>) -> (Vec<i128>, Vec<Almanac>) {
+    let mut seeds = Vec::new();
+    let mut book = Vec::new();
+    let mut almanac_lines = Vec::new();
+
+    for line in data {
+        if line.is_empty() { continue; }
+        /* if line.match: seeds: XXX, XXX */
+        /*  Build seeds */
+        if line.starts_with("seeds:") {
+            seeds = extract_seeds_part_02(&line);
+        }
+        /* Build almanach */
+        else if line.ends_with("map:") {
+            /* line.match XXX map: */
+            /*  Start new almanach entry: almanach.push(almanach_line) */
+            if !(almanac_lines.is_empty()) {
+                book.push(Almanac { entries: almanac_lines });
+            }
+            almanac_lines = Vec::new();
+        }
+        /*  Else : Add line entry  */
+        else {
+            almanac_lines.push(build_almanac_entry(&line));
+        }
+    }
+
+    /* Save last almanac, if it exists */
+    if !(almanac_lines.is_empty()) {
+        book.push(Almanac { entries: almanac_lines });
+    }
+
+    (seeds, book)
+}
+fn extract_seeds_part_02(line: &str) -> Vec<i128> {
+    let mut parsed_line = line.split(":");
+    let (_, number_list) = (parsed_line.next(), parse_number_list(parsed_line.next().unwrap()));
+    let mut seeds = Vec::new();
+    let mut seed_ranges = number_list.iter();
+    loop {
+        match (seed_ranges.next(), seed_ranges.next()) {
+            (Some(seed), Some(range)) => {
+                seeds.append(&mut (*seed .. *seed+*range).into_iter().collect());
+            },
+            (_, _) => break,
+        }
+    }
+
+    seeds
+}
+
 fn part_02() {
     let data = load_file_in_memory("./test-02.data").unwrap();
-    let final_result = 0;
+    let (seeds, almanac_list) = transform_data_part_02(data);
+    let locations: Vec<i128> = seeds.into_iter().map(|seed| almanac_list.iter().fold(seed, |seed, almanac| almanac.transform(seed))).collect();
+    let final_result = locations.iter().reduce(|location_min, location| min(location_min, location)).unwrap();
 
     println!("Part 2 final result: {}", final_result);
 }
 
 fn main() {
-/*
-    let vec = [Test{}, Test{}, Test{}, Test{}, Test{}].to_vec();
 
-    let result = vec.iter().fold(1, |x, item| item.transform(x));
-    println!("Result: {}", result);
-*/
-
-//    let test = 12.is_inside_right_open_interval(0, 1);
-//    println!(":: {}", test);
-/*
-    let a = AlmanacLines{destination: 0, range: 0, source: 0};
-    let test = a.transform(12 as i128);
-    match test {
-        Err(_) => println!("Pas bon!"),
-        Ok(x) => println!("Incroyabe: {}", x),
+    let seed = 79;
+    let range = 14;
+    let mut test: Vec<i128> = Vec::new();
+    test.append(&mut (seed .. seed+range).into_iter().collect());
+    let seed = 55;
+    let range = 13;
+    test.append(&mut (seed .. seed+range).into_iter().collect());
+    for i in test {
+        println!("[{i}]");
     }
-*/
 
     part_01();
     part_02();
-}
-
-
-#[derive(Debug, Clone)]
-struct Test {}
-impl Test {
-    fn transform(&self, x: u64) -> u64 {
-        x * 2
-    }
 }
