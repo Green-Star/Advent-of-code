@@ -178,6 +178,7 @@ fn extract_symbols_position_from_grid(grid: &Vec<Vec<char>>) -> Vec<Position> {
     symbols_positions
 }
 
+/*
 fn test_01(grid: &Vec<Vec<char>>, line: usize, column: usize) {
     let test = analyze_symbol(&grid, &Position { line: line, column: column });
     println!("{}", grid[line][column]);
@@ -185,20 +186,21 @@ fn test_01(grid: &Vec<Vec<char>>, line: usize, column: usize) {
         println!("[{}]", n);
     }
 }
+*/
 
 fn part_01() {
-    let data = load_file_in_memory("./test-01.data").unwrap();
+    let data = load_file_in_memory("./input-01.data").unwrap();
     let grid = transform_data(data);
     let number_list = grid_traversal(&grid);
     let final_result: u32 = number_list.iter().sum();
-
+/*
     test_01(&grid, 1, 3);
     test_01(&grid, 3, 6);
     test_01(&grid, 4, 3);
     test_01(&grid, 5, 5);
     test_01(&grid, 8, 3);
     test_01(&grid, 8, 5);
-
+*/
     println!("Extracted numbers: ");
     for i in number_list {
         println!("[{}]", i);
