@@ -30,8 +30,13 @@ fn transform_data(data: Vec<String>) -> Vec<Vec<char>> {
 
 fn grid_traversal(grid: &Vec<Vec<char>>) -> Vec<u32> {
     let symbols_positions = extract_symbols_position_from_grid(grid);
+    let number_list_from_symbols: Vec<Vec<u32>> = symbols_positions.iter().map(|symbol_position| analyze_symbol(grid, symbol_position)).collect();
 
-    Vec::new()
+    let mut numbers = Vec::new();
+    for mut number_list in number_list_from_symbols {
+        numbers.append(&mut number_list);
+    }
+    numbers
 }
 
 struct Position {
@@ -185,7 +190,7 @@ fn part_01() {
     let data = load_file_in_memory("./test-01.data").unwrap();
     let grid = transform_data(data);
     let number_list = grid_traversal(&grid);
-    let final_result = 0;
+    let final_result: u32 = number_list.iter().sum();
 
     test_01(&grid, 1, 3);
     test_01(&grid, 3, 6);
@@ -193,6 +198,12 @@ fn part_01() {
     test_01(&grid, 5, 5);
     test_01(&grid, 8, 3);
     test_01(&grid, 8, 5);
+
+    println!("Extracted numbers: ");
+    for i in number_list {
+        println!("[{}]", i);
+    }
+    println!("- End -");
 
 
     println!("Part 1 final result: {}", final_result);
