@@ -1,4 +1,3 @@
-use std::fmt::Error;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -229,7 +228,7 @@ fn is_gear(grid: &Vec<Vec<char>>, index: &Position) -> Result<u32, ()> {
 }
 
 fn part_02() {
-    let data = load_file_in_memory("./test-02.data").unwrap();
+    let data = load_file_in_memory("./input-02.data").unwrap();
     let grid = transform_data(data);
     let gear_ratios = grid_traversal_part_02(&grid);
     let final_result: u32 = gear_ratios.iter().sum();
