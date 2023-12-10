@@ -1,3 +1,4 @@
+use std::fmt::Error;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -28,7 +29,7 @@ fn transform_data(data: Vec<String>) -> Vec<Vec<char>> {
     lines
 }
 
-fn grid_traversal(grid: &Vec<Vec<char>>) -> Vec<u32> {
+fn grid_traversal_part_01(grid: &Vec<Vec<char>>) -> Vec<u32> {
     let symbols_positions = extract_symbols_position_from_grid(grid);
     let number_list_from_symbols: Vec<Vec<u32>> = symbols_positions.iter().map(|symbol_position| analyze_symbol(grid, symbol_position)).collect();
 
@@ -181,7 +182,7 @@ fn extract_symbols_position_from_grid(grid: &Vec<Vec<char>>) -> Vec<Position> {
 fn part_01() {
     let data = load_file_in_memory("./input-01.data").unwrap();
     let grid = transform_data(data);
-    let number_list = grid_traversal(&grid);
+    let number_list = grid_traversal_part_01(&grid);
     let final_result: u32 = number_list.iter().sum();
 
     println!("Extracted numbers: ");
@@ -194,9 +195,46 @@ fn part_01() {
     println!("Part 1 final result: {}", final_result);
 }
 
-fn part_02() {
-//    let data = load_file_in_memory("./test-02.data").unwrap();
+fn grid_traversal_part_02(grid: &Vec<Vec<char>>) -> Vec<u32> {
+    extract_gears(grid)
+}
 
+fn extract_gears(grid: &Vec<Vec<char>>) -> Vec<u32> {
+    let mut gear_ratios = Vec::new();
+
+    for line in 0..grid.len() {
+        for column in 0..grid[line].len() {
+            match grid[line][column] {
+                '*' => {
+                    let gear = is_gear(grid, &Position { line: line, column: column });
+                    match gear {
+                        Err(_) => {},
+                        Ok(gear_ratio) => gear_ratios.push(gear_ratio),
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    gear_ratios
+}
+
+fn is_gear(grid: &Vec<Vec<char>>, index: &Position) -> Result<u32, ()> {
+    let numbers = analyze_symbol(grid, index);
+    /* A gear has exactly 2 part numbers */
+    if numbers.len() != 2 { return Err(()) }
+    let (part_1, part_2) = (numbers[0], numbers[1]);
+    Ok(part_1 * part_2)
+}
+
+fn part_02() {
+    let data = load_file_in_memory("./test-02.data").unwrap();
+    let grid = transform_data(data);
+    let gear_ratios = grid_traversal_part_02(&grid);
+    let final_result: u32 = gear_ratios.iter().sum();
+
+    println!("Part 2 final result: {}", final_result);
 }
 
 fn main() {
