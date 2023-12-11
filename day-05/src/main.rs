@@ -75,13 +75,13 @@ impl Almanac {
     }
 }
 
-fn extract_seeds_part_01(line: &str) -> Vec<i128> {
+fn extract_seeds(line: &str) -> Vec<i128> {
     let mut parsed_line = line.split(":");
     let (_, seeds) = (parsed_line.next(), parse_number_list(parsed_line.next().unwrap()));
     seeds
 }
 
-fn transform_data_part_01(data: Vec<String>) -> (Vec<i128>, Vec<Almanac>) {
+fn transform_data(data: Vec<String>) -> (Vec<i128>, Vec<Almanac>) {
     let mut seeds = Vec::new();
     let mut book = Vec::new();
     let mut almanac_lines = Vec::new();
@@ -91,7 +91,7 @@ fn transform_data_part_01(data: Vec<String>) -> (Vec<i128>, Vec<Almanac>) {
         /* if line.match: seeds: XXX, XXX */
         /*  Build seeds */
         if line.starts_with("seeds:") {
-            seeds = extract_seeds_part_01(&line);
+            seeds = extract_seeds(&line);
         }
         /* Build almanach */
         else if line.ends_with("map:") {
@@ -123,7 +123,7 @@ fn build_almanac_entry(data: &str) -> AlmanacLines {
 
 fn part_01() {
     let data = load_file_in_memory("./input-01.data").unwrap();
-    let (seeds, almanac_list) = transform_data_part_01(data);
+    let (seeds, almanac_list) = transform_data(data);
     let locations: Vec<i128> = seeds.into_iter().map(|seed| almanac_list.iter().fold(seed, |seed, almanac| almanac.transform(seed))).collect();
     let final_result = locations.iter().reduce(|location_min, location| min(location_min, location)).unwrap();
 
@@ -131,62 +131,27 @@ fn part_01() {
 }
 
 
-fn transform_data_part_02(data: Vec<String>) -> (Vec<i128>, Vec<Almanac>) {
-    let mut seeds = Vec::new();
-    let mut book = Vec::new();
-    let mut almanac_lines = Vec::new();
-
-    for line in data {
-        if line.is_empty() { continue; }
-        /* if line.match: seeds: XXX, XXX */
-        /*  Build seeds */
-        if line.starts_with("seeds:") {
-            seeds = extract_seeds_part_02(&line);
-        }
-        /* Build almanach */
-        else if line.ends_with("map:") {
-            /* line.match XXX map: */
-            /*  Start new almanach entry: almanach.push(almanach_line) */
-            if !(almanac_lines.is_empty()) {
-                book.push(Almanac { entries: almanac_lines });
-            }
-            almanac_lines = Vec::new();
-        }
-        /*  Else : Add line entry  */
-        else {
-            almanac_lines.push(build_almanac_entry(&line));
-        }
-    }
-
-    /* Save last almanac, if it exists */
-    if !(almanac_lines.is_empty()) {
-        book.push(Almanac { entries: almanac_lines });
-    }
-
-    (seeds, book)
-}
-fn extract_seeds_part_02(line: &str) -> Vec<i128> {
-    let mut parsed_line = line.split(":");
-    let (_, number_list) = (parsed_line.next(), parse_number_list(parsed_line.next().unwrap()));
-    let mut seeds = Vec::new();
-    let mut seed_ranges = number_list.iter();
-    loop {
-        match (seed_ranges.next(), seed_ranges.next()) {
-            (Some(seed), Some(range)) => {
-                seeds.append(&mut (*seed .. *seed+*range).into_iter().collect());
-            },
-            (_, _) => break,
-        }
-    }
-
-    seeds
-}
 
 fn part_02() {
     let data = load_file_in_memory("./test-02.data").unwrap();
-    let (seeds, almanac_list) = transform_data_part_02(data);
-    let locations: Vec<i128> = seeds.into_iter().map(|seed| almanac_list.iter().fold(seed, |seed, almanac| almanac.transform(seed))).collect();
-    let final_result = locations.iter().reduce(|location_min, location| min(location_min, location)).unwrap();
+    let (seeds_description, almanac_list) = transform_data(data);
+
+    let mut location_min = None;
+    let mut seeds_list = seeds_description.into_iter();
+    let final_result = loop {
+        match (seeds_list.next(), seeds_list.next()) {
+            (Some(seed), Some(range)) => {
+                for current_seed in seed .. seed + range {
+                    let location = almanac_list.iter().fold(current_seed, |transformed_seed, almanac| almanac.transform(transformed_seed));
+                    match location_min {
+                        None => location_min = Some(location),
+                        Some(current_min) => location_min = Some(min(current_min, location)),
+                    }
+                }
+            }
+            (_, _) => break location_min.unwrap()
+        }
+    };
 
     println!("Part 2 final result: {}", final_result);
 }
