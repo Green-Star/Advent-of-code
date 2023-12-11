@@ -27,18 +27,12 @@ fn parse_number_list<T: std::str::FromStr>(s: &str) -> Vec<T> {
 }
 
 
-
-pub trait InsideExt
-{
-    fn inside<T>(&self, _start: T, _end: T) -> bool {
-        true
+trait InsideExt: PartialOrd {
+    fn is_inside_right_open_interval(&self, start: &Self, end: &Self) -> bool {
+        if start <= self && self < end { true } else { false }
     }
 }
 impl InsideExt for i128 {}
-
-fn is_inside_right_open_interval<T: std::cmp::PartialOrd<T>>(x: &T, start: &T, end: &T) -> bool {
-    if start <= x && x < end { true } else { false }
-}
 
 #[derive(Debug, Clone)]
 struct AlmanacLines {
@@ -52,15 +46,8 @@ impl std::fmt::Display for AlmanacLines {
     }
 }
 impl AlmanacLines {
-    /*
-    fn transform<T: InExt<T>>(&self, x: i128) -> Result<i128, ()> {
-        if x.inside(0, 1) { return Ok(x) }
-        Err(())
-    }
-    */
-
     fn transform(&self, x: &i128) -> Result<i128, ()> {
-        if is_inside_right_open_interval(x, &self.source, &(self.source + self.range)) { return Ok(self.destination + x - self.source) }
+        if x.is_inside_right_open_interval(&self.source, &(self.source + self.range)) { return Ok(self.destination + x - self.source) }
         Err(())
     }
 }
@@ -196,7 +183,7 @@ fn extract_seeds_part_02(line: &str) -> Vec<i128> {
 }
 
 fn part_02() {
-    let data = load_file_in_memory("./input-02.data").unwrap();
+    let data = load_file_in_memory("./test-02.data").unwrap();
     let (seeds, almanac_list) = transform_data_part_02(data);
     let locations: Vec<i128> = seeds.into_iter().map(|seed| almanac_list.iter().fold(seed, |seed, almanac| almanac.transform(seed))).collect();
     let final_result = locations.iter().reduce(|location_min, location| min(location_min, location)).unwrap();
