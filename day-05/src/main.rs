@@ -2,6 +2,7 @@ use std::cmp::min;
 use std::fs::File;
 use std::i128;
 use std::io::{BufRead, BufReader};
+use std::time::Instant;
 
 fn load_file_in_memory(filepath: &str) -> std::io::Result<Vec<String>> {
     let file = File::open(filepath)?;
@@ -50,6 +51,11 @@ impl AlmanacLines {
         if x.is_inside_right_open_interval(&self.source, &(self.source + self.range)) { return Ok(self.destination + x - self.source) }
         Err(())
     }
+
+    fn untransform(&self, y: &i128) -> Result<i128, ()> {
+        if y.is_inside_right_open_interval(&self.destination, &(self.destination + self.range)) { return Ok(self.source + y - self.destination) }
+        Err(())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -72,6 +78,16 @@ impl Almanac {
             }
         }
         x
+    }
+
+    fn untransform(&self, y: i128) -> i128 {
+        for line in &self.entries {
+            match line.untransform(&y) {
+                Err(_) => {},
+                Ok(source) => return source,
+            }
+        }
+        y
     }
 }
 
@@ -132,8 +148,8 @@ fn part_01() {
 
 
 
-fn part_02() {
-    let data = load_file_in_memory("./test-02.data").unwrap();
+fn part_02_abandonned() {
+    let data = load_file_in_memory("./input-02.data").unwrap();
     let (seeds_description, almanac_list) = transform_data(data);
 
     let mut location_min = None;
@@ -148,15 +164,77 @@ fn part_02() {
                         Some(current_min) => location_min = Some(min(current_min, location)),
                     }
                 }
+                println!("Processing... Current location found: {:?}", location_min);
             }
-            (_, _) => break location_min.unwrap()
+            (_, _) => break location_min.unwrap(),
         }
     };
 
     println!("Part 2 final result: {}", final_result);
 }
 
+fn part_02() {
+    let data = load_file_in_memory("./input-02.data").unwrap();
+    let (seeds_description, almanac_list) = transform_data(data);
+
+    /* Build seed list */
+    let seeds_list = build_seed_list(&seeds_description);
+
+    let mut location = 0;
+    let (minimum_seed, final_result) = loop {
+        let result = almanac_list.iter().rfold(location, |seed_found, almanac| almanac.untransform(seed_found));
+
+        /* Find seed in seed list if exists */
+        match find_seed(result, &seeds_list) {
+            None => location += 1,
+            Some(seed) => break (seed, location),
+        }
+    };
+
+    println!("Optimized part 2 final result: Seed {minimum_seed} -> {final_result}");
+    println!("Optimized part 2 final result: Location {final_result}");
+}
+
+#[derive(Debug)]
+struct SeedRange {
+    seed: i128,
+    range: i128,
+}
+impl SeedRange {
+    fn is_seed_inside_range(&self, seed: &i128) -> bool {
+        seed.is_inside_right_open_interval(&self.seed, &(self.seed + self.range))
+    }
+}
+fn build_seed_list(seeds_description: &Vec<i128>) -> Vec<SeedRange> {
+    let mut seeds_list = Vec::new();
+
+    let mut description = seeds_description.iter();
+    loop {
+        match (description.next(), description.next()) {
+            (Some(seed), Some(range)) => seeds_list.push(SeedRange { seed: *seed, range: *range }),
+            (_, _) => break,
+        }
+    };
+
+    seeds_list
+}
+
+fn find_seed(seed: i128, seed_list: &Vec<SeedRange>) -> Option<i128> {
+    for range in seed_list {
+        if range.is_seed_inside_range(&seed) { return Some(seed) }
+    }
+    None
+}
+
+
+
 fn main() {
+    let now = Instant::now();
     part_01();
+    let elapsed = now.elapsed();
+    println!("Part 1 found in {:?}s", elapsed.as_secs());
+    let now = Instant::now();
     part_02();
+    let elapsed = now.elapsed();
+    println!("Optimized part 2 found in {:?}s", elapsed.as_secs());
 }
