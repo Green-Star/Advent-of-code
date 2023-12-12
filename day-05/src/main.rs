@@ -182,11 +182,15 @@ fn part_02() {
 
     let mut location = 0;
     let (minimum_seed, final_result) = loop {
+        /* Going backwards through the almanach */
+        /*  Starting with the location, we untransform the result through each map in the almanach to get the seed corresponding to that location */
         let result = almanac_list.iter().rfold(location, |seed_found, almanac| almanac.untransform(seed_found));
 
-        /* Find seed in seed list if exists */
+        /* And then, we verify if this seed is part of the input seeds */
         match find_seed(result, &seeds_list) {
+            /* The seed is not part of the input seeds, so the current location is not accessible from the given input seeds => we have to keep on searching the lowest location */
             None => location += 1,
+            /* If the seed exists, we found the lowest location, so we can stop here */
             Some(seed) => break (seed, location),
         }
     };
