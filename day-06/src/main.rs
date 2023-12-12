@@ -77,7 +77,7 @@ fn transform_data(data: Vec<String>) -> Vec<Race> {
 }
 
 fn part_01() {
-    let data = load_file_in_memory("./test-01.data").unwrap();
+    let data = load_file_in_memory("./input-01.data").unwrap();
     let races = transform_data(data);
     let final_result = races.iter().fold(1, |wins_number, race| wins_number * race.possible_wins);
 
