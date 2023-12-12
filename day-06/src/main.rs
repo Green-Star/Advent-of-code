@@ -100,7 +100,7 @@ fn get_number_on_line(split: &str) -> u64 {
 }
 
 fn part_02() {
-    let data = load_file_in_memory("./test-02.data").unwrap();
+    let data = load_file_in_memory("./input-02.data").unwrap();
     let races = transform_data_part_02(data);
     let final_result = races.iter().fold(1, |wins_number, race| wins_number * race.possible_wins);
 
