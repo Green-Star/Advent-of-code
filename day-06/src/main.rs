@@ -27,7 +27,26 @@ fn parse_number_list<T: std::str::FromStr>(s: &str) -> Vec<T> {
     s.split(" ").filter_map(|s| s.parse::<T>().ok()).collect()
 }
 
+fn part_01() {
+    let data = load_file_in_memory("./test-01.data").unwrap();
+
+    let final_result = 0;
+
+    println!("Part 1 final result: {}", final_result);
+}
+
+fn part_02() {
+
+}
+
 
 fn main() {
-    println!("Hello, world!");
+    let now = Instant::now();
+    part_01();
+    let elapsed = now.elapsed();
+    println!("Part 1 found in {:?}s", elapsed.as_secs());
+    let now = Instant::now();
+    part_02();
+    let elapsed = now.elapsed();
+    println!("Optimized part 2 found in {:?}s", elapsed.as_secs());
 }
