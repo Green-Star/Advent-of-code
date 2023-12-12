@@ -1,6 +1,4 @@
-use std::cmp::min;
 use std::fs::File;
-use std::i128;
 use std::io::{BufRead, BufReader};
 use std::time::Instant;
 
@@ -40,12 +38,12 @@ impl Race {
 
     fn get_possible_wins(length: u64, record: u64) -> u64 {
         let mut possible_wins = 0;
-        println!("Length: {length}, Record: {record}");
         for i in 0 ..= length {
             if Race::get_distance(i, length) > record {
                 possible_wins += 1;
             }
         }
+        println!("Length: {length}, Record: {record} -> Possible wins: {possible_wins}");
         possible_wins
     }
 
@@ -59,7 +57,7 @@ fn parse_line(line: &str) -> Vec<u64> {
     parse_number_list(parsed_line.last().unwrap())
 }
 
-fn transform_data(data: Vec<String>) -> Vec<Race> {
+fn transform_data_part_01(data: Vec<String>) -> Vec<Race> {
     let time_line = parse_line(&data[0]);
     let record_line = parse_line(&data[1]);
     let mut time_list = time_line.iter();
@@ -78,14 +76,35 @@ fn transform_data(data: Vec<String>) -> Vec<Race> {
 
 fn part_01() {
     let data = load_file_in_memory("./input-01.data").unwrap();
-    let races = transform_data(data);
+    let races = transform_data_part_01(data);
     let final_result = races.iter().fold(1, |wins_number, race| wins_number * race.possible_wins);
 
     println!("Part 1 final result: {}", final_result);
 }
 
-fn part_02() {
+fn transform_data_part_02(data: Vec<String>) -> Vec<Race> {
+    vec![ Race::from(&get_number_on_line(&data[0]), &get_number_on_line(&data[1])) ]
+}
 
+fn get_number_on_line(split: &str) -> u64 {
+    let mut number = 0;
+
+    for c in split.chars() {
+        if !(c.is_numeric()) { continue };
+
+        number *= 10;
+        number += u64::from(c.to_digit(10).unwrap());
+    }
+
+    number
+}
+
+fn part_02() {
+    let data = load_file_in_memory("./test-02.data").unwrap();
+    let races = transform_data_part_02(data);
+    let final_result = races.iter().fold(1, |wins_number, race| wins_number * race.possible_wins);
+
+    println!("Part 2 final result: {}", final_result);
 }
 
 
@@ -97,5 +116,5 @@ fn main() {
     let now = Instant::now();
     part_02();
     let elapsed = now.elapsed();
-    println!("Optimized part 2 found in {:?}s", elapsed.as_secs());
+    println!("Part 2 found in {:?}s", elapsed.as_secs());
 }
