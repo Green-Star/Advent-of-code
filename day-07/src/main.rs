@@ -86,6 +86,10 @@ impl Hand {
             _ => return None,
         }
     }
+
+    fn from_str(string: &str, bid: u64) -> Hand {
+        Hand::from(&(string.chars().collect()), bid)
+    }
 }
 impl Ord for Hand {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -119,11 +123,11 @@ fn main() {
 
 
 
-    let left = Hand::from(&vec!['3','3','3','3','2'], 0);
+    let left = Hand::from_str("33332", 0);
     assert!(left == Hand { strength: Rank::FourOfAKind, cards: vec![
                             Symbols::Three, Symbols::Three, Symbols::Three, Symbols::Three, Symbols::Two
                         ], bid: 0, rank: 0 });
-    let right = Hand::from(&vec!['2','A','A','A','A'], 0);
+    let right = Hand::from_str("2AAAA", 0);
     assert!(right == Hand { strength: Rank::FourOfAKind, cards: vec![
         Symbols::Two, Symbols::Ace, Symbols::Ace, Symbols::Ace, Symbols::Ace
     ], bid: 0, rank: 0 });
