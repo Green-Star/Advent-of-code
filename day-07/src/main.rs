@@ -1,6 +1,6 @@
 use std::{cmp::Ordering, collections::HashMap};
 
-#[derive(PartialOrd, Ord, PartialEq, Eq)]
+#[derive(PartialOrd, Ord, PartialEq, Eq, Debug)]
 enum Rank {
     HighCard,
     OnePair,
@@ -11,7 +11,7 @@ enum Rank {
     FiveOfAKind,
 }
 
-#[derive(PartialOrd, Ord, PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(PartialOrd, Ord, PartialEq, Eq, Hash, Clone, Copy, Debug)]
 enum Symbols {
     Two,
     Three,
@@ -48,7 +48,7 @@ impl Symbols {
     }
 }
 
-#[derive(PartialOrd, PartialEq, Eq)]
+#[derive(PartialOrd, PartialEq, Eq, Debug)]
 struct Hand {
     cards: Vec<Symbols>,
     bid: u64,
@@ -73,7 +73,10 @@ impl Hand {
         }
 
         let mut values: Vec<u32> = hashmap.into_values().collect();
+        /* Sort ascending... */
         values.sort();
+        /* and reverse ot to get values in descending order */
+        values.reverse();
         match values[0] {
             5 => return Some(Rank::FiveOfAKind),
             4 => return Some(Rank::FourOfAKind),
@@ -116,31 +119,38 @@ fn main() {
 
 
 
-    let left: Hand = Hand { strength: Rank::FourOfAKind, cards: vec![
-        Symbols::Three, Symbols::Three, Symbols::Three, Symbols::Three, Symbols::Two
-    ], bid: 0, rank: 0 };
-    let right: Hand = Hand { strength: Rank::FourOfAKind, cards: vec![
+    let left = Hand::from(&vec!['3','3','3','3','2'], 0);
+    assert!(left == Hand { strength: Rank::FourOfAKind, cards: vec![
+                            Symbols::Three, Symbols::Three, Symbols::Three, Symbols::Three, Symbols::Two
+                        ], bid: 0, rank: 0 });
+    let right = Hand::from(&vec!['2','A','A','A','A'], 0);
+    assert!(right == Hand { strength: Rank::FourOfAKind, cards: vec![
         Symbols::Two, Symbols::Ace, Symbols::Ace, Symbols::Ace, Symbols::Ace
-    ], bid: 0, rank: 0 };
+    ], bid: 0, rank: 0 });
     assert!(left > right);
 
-    let left: Hand = Hand { strength: Rank::Full, cards: vec![
+    let left = Hand::from(&vec!['7','7','8','8','8'], 0);
+    assert!(left == Hand { strength: Rank::Full, cards: vec![
         Symbols::Seven, Symbols::Seven, Symbols::Eight, Symbols::Eight, Symbols::Eight
-    ], bid: 0, rank: 0 };
-    let right: Hand = Hand { strength: Rank::Full, cards: vec![
+    ], bid: 0, rank: 0 });
+    let right = Hand::from(&vec!['7','7','7','8','8'], 0);
+    assert!(right == Hand { strength: Rank::Full, cards: vec![
         Symbols::Seven, Symbols::Seven, Symbols::Seven, Symbols::Eight, Symbols::Eight
-    ], bid: 0, rank: 0 };
+    ], bid: 0, rank: 0 });
     assert!(left > right);
 
-    let one: Hand = Hand { strength: Rank::OnePair, cards: vec![
+    let one = Hand::from(&vec!['3','2','T','3','K'], 0);
+    assert!(one == Hand { strength: Rank::OnePair, cards: vec![
         Symbols::Three, Symbols::Two, Symbols::Ten, Symbols::Three, Symbols::King
-    ], bid: 0, rank: 0 };
-    let two: Hand = Hand { strength: Rank::TwoPairs, cards: vec![
+    ], bid: 0, rank: 0 });
+    let two = Hand::from(&vec!['K','K','6','7','7'], 0);
+    assert!(two == Hand { strength: Rank::TwoPairs, cards: vec![
         Symbols::King, Symbols::King, Symbols::Six, Symbols::Seven, Symbols::Seven
-    ], bid: 0, rank: 0 };
-    let three: Hand = Hand { strength: Rank::TwoPairs, cards: vec![
+    ], bid: 0, rank: 0 });
+    let three = Hand::from(&vec!['K','T','J','J','T'], 0);
+    assert!(three == Hand { strength: Rank::TwoPairs, cards: vec![
         Symbols::King, Symbols::Ten, Symbols::Jack, Symbols::Jack, Symbols::Ten
-    ], bid: 0, rank: 0 };
+    ], bid: 0, rank: 0 });
     assert!(one < two);
     assert!(one < three);
     assert!(two > three);
