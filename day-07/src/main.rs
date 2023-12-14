@@ -1,4 +1,31 @@
 use std::{cmp::Ordering, collections::HashMap};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+use std::time::Instant;
+
+fn load_file_in_memory(filepath: &str) -> std::io::Result<Vec<String>> {
+    let file = File::open(filepath)?;
+    let reader = BufReader::new(file);
+
+    let mut data = Vec::new();
+
+    for line in reader.lines() {
+        data.push(line.unwrap());
+    }
+
+    Ok(data)
+}
+
+/* Input string examples:
+    [ 41 48 83 86 17 ]
+    [ 83 86  6 31 17  9 48 53]
+
+    Result: Vec of numbers
+*/
+fn parse_number_list<T: std::str::FromStr>(s: &str) -> Vec<T> {
+    s.split(" ").filter_map(|s| s.parse::<T>().ok()).collect()
+}
+
 
 #[derive(PartialOrd, Ord, PartialEq, Eq, Debug)]
 enum Rank {
@@ -48,7 +75,7 @@ impl Symbols {
     }
 }
 
-#[derive(PartialOrd, PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 struct Hand {
     cards: Vec<Symbols>,
     bid: u64,
@@ -110,7 +137,42 @@ impl Ord for Hand {
         Ordering::Equal
     }
 }
+impl PartialOrd for Hand {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
+
+
+fn transform_data(data: Vec<String>) -> Vec<Hand> {
+    let mut hands = Vec::new();
+
+    for line in data {
+        let mut parsed_data = line.split(" ");
+        match (parsed_data.next(), parsed_data.next()) {
+            (Some(cards), Some(bid)) => hands.push(Hand::from_str(cards, bid.parse().unwrap())),
+            (_, _) => {},
+        }
+    }
+
+    hands
+}
+
+fn part_01() {
+    let data = load_file_in_memory("./test-01.data").unwrap();
+    let mut hands = transform_data(data);
+    let mut rank = 1;
+    hands.sort();
+    for hand in hands.iter_mut() {
+        hand.rank = rank;
+        println!("{:?}", hand);
+        rank += 1;
+    }
+    let final_result: u64 = hands.iter().map(|hand| hand.rank * hand.bid).sum();
+
+    println!("Part 1 final result: {}", final_result);
+}
 
 fn main() {
     assert!(Rank::FiveOfAKind > Rank::FourOfAKind);
@@ -159,5 +221,14 @@ fn main() {
     assert!(one < three);
     assert!(two > three);
 
-    println!("Hello, world!");
+
+
+    let now = Instant::now();
+    part_01();
+    let elapsed = now.elapsed();
+    println!("Part 1 found in {:?}s", elapsed.as_secs());
+    let now = Instant::now();
+    //part_02();
+    let elapsed = now.elapsed();
+    println!("Part 2 found in {:?}s", elapsed.as_secs());
 }
