@@ -160,7 +160,7 @@ fn transform_data(data: Vec<String>) -> Vec<Hand> {
 }
 
 fn part_01() {
-    let data = load_file_in_memory("./test-01.data").unwrap();
+    let data = load_file_in_memory("./input-01.data").unwrap();
     let mut hands = transform_data(data);
     let mut rank = 1;
     hands.sort();
