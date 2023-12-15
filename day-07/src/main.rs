@@ -15,16 +15,6 @@ fn load_file_in_memory(filepath: &str) -> std::io::Result<Vec<String>> {
     Ok(data)
 }
 
-/* Input string examples:
-    [ 41 48 83 86 17 ]
-    [ 83 86  6 31 17  9 48 53]
-
-    Result: Vec of numbers
-*/
-fn parse_number_list<T: std::str::FromStr>(s: &str) -> Vec<T> {
-    s.split(" ").filter_map(|s| s.parse::<T>().ok()).collect()
-}
-
 
 mod part_01 {
     use crate::load_file_in_memory;
@@ -179,7 +169,7 @@ mod part_01 {
 
 mod part_02 {
     use crate::load_file_in_memory;
-    use std::{cmp::Ordering, collections::{HashMap, btree_map::Entry, btree_set::SymmetricDifference}};
+    use std::{cmp::Ordering, collections::{HashMap}};
 
     #[derive(PartialOrd, Ord, PartialEq, Eq, Debug)]
     enum Rank {
@@ -353,7 +343,7 @@ mod part_02 {
     }
 
     pub fn resolve() {
-        let data = load_file_in_memory("./test-02.data").unwrap();
+        let data = load_file_in_memory("./input-02.data").unwrap();
         let mut hands = transform_data(data);
         let mut rank = 1;
         hands.sort();
