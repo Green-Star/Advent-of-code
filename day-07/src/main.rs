@@ -273,6 +273,7 @@ mod part_02 {
                 None => return,
                 Some(symbol) => { hand.entry(*symbol).and_modify(|occurences| *occurences += joker_numbers); },
             }
+            hand.entry(Symbols::Joker).and_modify(|number| *number = 0);
         }
 
         fn find_most_occuring_concrete_symbol_in_hand(hand: &HashMap<Symbols, u32>) -> Option<&Symbols> {
