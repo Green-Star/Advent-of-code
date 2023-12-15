@@ -179,7 +179,7 @@ mod part_01 {
 
 mod part_02 {
     use crate::load_file_in_memory;
-    use std::{cmp::Ordering, collections::HashMap};
+    use std::{cmp::Ordering, collections::{HashMap, btree_map::Entry, btree_set::SymmetricDifference}};
 
     #[derive(PartialOrd, Ord, PartialEq, Eq, Debug)]
     enum Rank {
@@ -250,12 +250,10 @@ mod part_02 {
         fn get_hand_strength(cards: &Vec<Symbols>) -> Option<Rank> {
             let mut hashmap: HashMap<Symbols, u32> = HashMap::new();
             for c in cards {
-                if c == &Symbols::Joker {
-                    Hand::add_joker_in_hand(&mut hashmap);
-                } else {
-                    hashmap.entry(*c).and_modify(|number| *number += 1).or_insert(1);
-                }
+                hashmap.entry(*c).and_modify(|number| *number += 1).or_insert(1);
             }
+
+            Hand::process_jokers_in_hand(&mut hashmap);
 
             let mut values: Vec<u32> = hashmap.into_values().collect();
             /* Sort ascending... */
@@ -272,20 +270,42 @@ mod part_02 {
             }
         }
 
-        fn add_joker_in_hand(hand: &mut HashMap<Symbols, u32>) {
-            hand.entry(Symbols::Joker).and_modify(|number| *number += 1).or_insert(1);
-            hand.entry(Symbols::Two).and_modify(|number| *number += 1).or_insert(1);
-            hand.entry(Symbols::Three).and_modify(|number| *number += 1).or_insert(1);
-            hand.entry(Symbols::Four).and_modify(|number| *number += 1).or_insert(1);
-            hand.entry(Symbols::Five).and_modify(|number| *number += 1).or_insert(1);
-            hand.entry(Symbols::Six).and_modify(|number| *number += 1).or_insert(1);
-            hand.entry(Symbols::Seven).and_modify(|number| *number += 1).or_insert(1);
-            hand.entry(Symbols::Eight).and_modify(|number| *number += 1).or_insert(1);
-            hand.entry(Symbols::Nine).and_modify(|number| *number += 1).or_insert(1);
-            hand.entry(Symbols::Ten).and_modify(|number| *number += 1).or_insert(1);
-            hand.entry(Symbols::Queen).and_modify(|number| *number += 1).or_insert(1);
-            hand.entry(Symbols::King).and_modify(|number| *number += 1).or_insert(1);
-            hand.entry(Symbols::Ace).and_modify(|number| *number += 1).or_insert(1);
+        fn process_jokers_in_hand(hand: &mut HashMap<Symbols, u32>) {
+            let jokers = hand.get(&Symbols::Joker);
+            let joker_numbers;
+            match jokers {
+                None => return,
+                Some(number) => { joker_numbers = *number },
+            }
+
+            let most = Hand::find_most_occuring_concrete_symbol_in_hand(hand);
+            match most {
+                None => return,
+                Some(symbol) => { hand.entry(*symbol).and_modify(|occurences| *occurences += joker_numbers); },
+            }
+        }
+
+        fn find_most_occuring_concrete_symbol_in_hand(hand: &HashMap<Symbols, u32>) -> Option<&Symbols> {
+            let mut most_occuring = None;
+
+            for card in hand.keys() {
+                if card == &Symbols::Joker { continue; }
+
+                let destructured_card = hand.get_key_value(card).unwrap();
+                match most_occuring {
+                    None => most_occuring = Some(destructured_card),
+                    Some((_, max)) => {
+                        if destructured_card.1 > max {
+                            most_occuring = Some(destructured_card);
+                        }
+                    },
+                }
+            }
+
+            match most_occuring {
+                None => None,
+                Some((symbol, _)) => Some(symbol),
+            }
         }
 
         fn from_str(string: &str, bid: u64) -> Hand {
