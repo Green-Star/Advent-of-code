@@ -194,6 +194,7 @@ mod part_02 {
 
     #[derive(PartialOrd, Ord, PartialEq, Eq, Hash, Clone, Copy, Debug)]
     enum Symbols {
+        Joker,
         Two,
         Three,
         Four,
@@ -203,7 +204,6 @@ mod part_02 {
         Eight,
         Nine,
         Ten,
-        Jack,
         Queen,
         King,
         Ace,
@@ -214,7 +214,6 @@ mod part_02 {
                 'A' => Some(Symbols::Ace),
                 'K' => Some(Symbols::King),
                 'Q' => Some(Symbols::Queen),
-                'J' => Some(Symbols::Jack),
                 'T' => Some(Symbols::Ten),
                 '9' => Some(Symbols::Nine),
                 '8' => Some(Symbols::Eight),
@@ -224,6 +223,7 @@ mod part_02 {
                 '4' => Some(Symbols::Four),
                 '3' => Some(Symbols::Three),
                 '2' => Some(Symbols::Two),
+                'J' => Some(Symbols::Joker),
                 _ => None,
             }
         }
@@ -250,7 +250,11 @@ mod part_02 {
         fn get_hand_strength(cards: &Vec<Symbols>) -> Option<Rank> {
             let mut hashmap: HashMap<Symbols, u32> = HashMap::new();
             for c in cards {
-                hashmap.entry(*c).and_modify(|number| *number += 1).or_insert(1);
+                if c == &Symbols::Joker {
+                    Hand::add_joker_in_hand(&mut hashmap);
+                } else {
+                    hashmap.entry(*c).and_modify(|number| *number += 1).or_insert(1);
+                }
             }
 
             let mut values: Vec<u32> = hashmap.into_values().collect();
@@ -266,6 +270,22 @@ mod part_02 {
                 1 => return Some(Rank::HighCard),
                 _ => return None,
             }
+        }
+
+        fn add_joker_in_hand(hand: &mut HashMap<Symbols, u32>) {
+            hand.entry(Symbols::Joker).and_modify(|number| *number += 1).or_insert(1);
+            hand.entry(Symbols::Two).and_modify(|number| *number += 1).or_insert(1);
+            hand.entry(Symbols::Three).and_modify(|number| *number += 1).or_insert(1);
+            hand.entry(Symbols::Four).and_modify(|number| *number += 1).or_insert(1);
+            hand.entry(Symbols::Five).and_modify(|number| *number += 1).or_insert(1);
+            hand.entry(Symbols::Six).and_modify(|number| *number += 1).or_insert(1);
+            hand.entry(Symbols::Seven).and_modify(|number| *number += 1).or_insert(1);
+            hand.entry(Symbols::Eight).and_modify(|number| *number += 1).or_insert(1);
+            hand.entry(Symbols::Nine).and_modify(|number| *number += 1).or_insert(1);
+            hand.entry(Symbols::Ten).and_modify(|number| *number += 1).or_insert(1);
+            hand.entry(Symbols::Queen).and_modify(|number| *number += 1).or_insert(1);
+            hand.entry(Symbols::King).and_modify(|number| *number += 1).or_insert(1);
+            hand.entry(Symbols::Ace).and_modify(|number| *number += 1).or_insert(1);
         }
 
         fn from_str(string: &str, bid: u64) -> Hand {
@@ -329,55 +349,6 @@ mod part_02 {
 }
 
 fn main() {
-    /*
-    assert!(Rank::FiveOfAKind > Rank::FourOfAKind);
-    assert!(Rank::ThreeOfAKind > Rank::TwoPairs);
-    assert!(Rank::ThreeOfAKind > Rank::HighCard);
-
-    assert!(Symbols::Ace > Symbols::King);
-    assert!(Symbols::Ten > Symbols::Two);
-    assert!(Symbols::Eight > Symbols::Jack);
-
-
-
-    let left = Hand::from_str("33332", 0);
-    assert!(left == Hand { strength: Rank::FourOfAKind, cards: vec![
-                            Symbols::Three, Symbols::Three, Symbols::Three, Symbols::Three, Symbols::Two
-                        ], bid: 0, rank: 0 });
-    let right = Hand::from_str("2AAAA", 0);
-    assert!(right == Hand { strength: Rank::FourOfAKind, cards: vec![
-        Symbols::Two, Symbols::Ace, Symbols::Ace, Symbols::Ace, Symbols::Ace
-    ], bid: 0, rank: 0 });
-    assert!(left > right);
-
-    let left = Hand::from(&vec!['7','7','8','8','8'], 0);
-    assert!(left == Hand { strength: Rank::Full, cards: vec![
-        Symbols::Seven, Symbols::Seven, Symbols::Eight, Symbols::Eight, Symbols::Eight
-    ], bid: 0, rank: 0 });
-    let right = Hand::from(&vec!['7','7','7','8','8'], 0);
-    assert!(right == Hand { strength: Rank::Full, cards: vec![
-        Symbols::Seven, Symbols::Seven, Symbols::Seven, Symbols::Eight, Symbols::Eight
-    ], bid: 0, rank: 0 });
-    assert!(left > right);
-
-    let one = Hand::from(&vec!['3','2','T','3','K'], 0);
-    assert!(one == Hand { strength: Rank::OnePair, cards: vec![
-        Symbols::Three, Symbols::Two, Symbols::Ten, Symbols::Three, Symbols::King
-    ], bid: 0, rank: 0 });
-    let two = Hand::from(&vec!['K','K','6','7','7'], 0);
-    assert!(two == Hand { strength: Rank::TwoPairs, cards: vec![
-        Symbols::King, Symbols::King, Symbols::Six, Symbols::Seven, Symbols::Seven
-    ], bid: 0, rank: 0 });
-    let three = Hand::from(&vec!['K','T','J','J','T'], 0);
-    assert!(three == Hand { strength: Rank::TwoPairs, cards: vec![
-        Symbols::King, Symbols::Ten, Symbols::Jack, Symbols::Jack, Symbols::Ten
-    ], bid: 0, rank: 0 });
-    assert!(one < two);
-    assert!(one < three);
-    assert!(two > three);
-*/
-
-
     let now = Instant::now();
     part_01::resolve();
     let elapsed = now.elapsed();
