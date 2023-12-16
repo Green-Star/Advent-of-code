@@ -17,6 +17,7 @@ fn load_file_in_memory(filepath: &str) -> std::io::Result<Vec<String>> {
 }
 
 
+#[derive(Debug)]
 enum Direction {
     Left,
     Right,
@@ -71,21 +72,29 @@ fn walk(walker: &mut Walker, grid: &HashMap<&str, Node>, direction: &Direction) 
 }
 */
 
-fn transform_data(data: Vec<String>) -> (Vec<Direction>, HashMap<String, Node>) {
+fn transform_data(data: Vec<String>) -> (Vec<Direction>, String, String, HashMap<String, Node>) {
     let mut directions = Vec::new();
     let mut grid = HashMap::new();
+    let mut starting_id = None;
+    let mut end_id = None;
 
     for line in data {
         if line.is_empty() { continue; }
 
-        let node_line = line.find("=");
         match line.find("=") {
-            Some(_) => { let (node_id, node) = process_node_line(line); grid.insert(node_id, node); },
             None => directions.append(&mut process_direction_line(line)),
+            Some(_) => {
+                let (node_id, node) = process_node_line(line);
+
+                if starting_id == None { starting_id = Some(node_id.clone()) }
+                end_id = Some(node_id.clone());
+
+                grid.insert(node_id, node);
+            },
         };
     }
 
-    (directions, grid)
+    (directions, starting_id.unwrap(), end_id.unwrap(), grid)
 }
 
 fn process_node_line(line: String) -> (String, Node) {
@@ -109,13 +118,35 @@ fn process_direction_line(line: String) -> Vec<Direction> {
 }
 
 fn part_01() {
+    let data = load_file_in_memory("./input.data").unwrap();
+    let (directions, starting_id, end_id, map) = transform_data(data);
 
+    let mut walker = (&starting_id, map.get(&starting_id).unwrap());
+    let mut steps = 0;
+
+    'directions: loop {
+        for next_step in &directions {
+            if walker.0 == "DHD" { break 'directions }
+
+println!("Step [{}] : Being at [{}] -> ([{}], [{}]), going {:?}", steps, &walker.0, &walker.1.left_id, &walker.1.right_id, next_step);
+
+            steps += 1;
+            match next_step {
+                Direction::Left => walker = (&(map.get(walker.0).unwrap().left_id), map.get(&map.get(walker.0).unwrap().left_id).unwrap()),
+                Direction::Right => walker = (&(map.get(walker.0).unwrap().right_id), map.get(&map.get(walker.0).unwrap().right_id).unwrap()),
+            }
+        }
+    }
+
+    let final_result = steps;
+
+    println!("Part 2 final result: {}", final_result);
 }
 
 
 fn main() {
     let now = Instant::now();
-//    part_01::resolve();
+    part_01();
     let elapsed = now.elapsed();
     println!("Part 1 found in {:?}s", elapsed.as_secs());
     let now = Instant::now();
