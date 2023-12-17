@@ -43,34 +43,32 @@ impl Node {
     }
 }
 
-/*
-struct Walker {
-    grid: HashMap<String, Node>,
+
+struct Walker<'a> {
+    grid: &'a HashMap<String, Node>,
+    end: &'a str,
 
     steps: u32,
-    current: Node,
+    current: &'a str,
 }
-impl Walker {
-    fn new<'a>(grid: HashMap<String, Node>, start: &str) -> Walker {
-        Walker { grid, steps: 0, current: grid.get(start).unwrap().clone() }
+impl Walker<'_> {
+    fn new<'a>(grid: &'a HashMap<String, Node>, start: &'a str, end: &'a str) -> Walker<'a> {
+        Walker { grid, steps: 0, current: start, end }
     }
 
     fn walk(&mut self, direction: &Direction) {
         self.steps += 1;
         match direction {
-            Direction::Left => self.current = self.grid.get(&self.current.left_id).unwrap().clone(),
-            Direction::Right => {},//self.current = grid.get(&self.current.right_id).unwrap(),
+            Direction::Left => self.current = &self.grid.get(self.current).unwrap().left_id,
+            Direction::Right => self.current = &self.grid.get(self.current).unwrap().right_id,
         }
     }
-}
-*/
 
-/*
-fn walk(walker: &mut Walker, grid: &HashMap<&str, Node>, direction: &Direction) {
-    walker.steps += 1;
-    walker.current = grid.get(walker.current.left_id).unwrap().clone();
+    fn is_arrived(&self) -> bool {
+        if self.current == self.end { return true } else { return false }
+    }
 }
-*/
+
 
 fn transform_data(data: Vec<String>) -> (Vec<Direction>, HashMap<String, Node>) {
     let mut directions = Vec::new();
