@@ -112,7 +112,7 @@ fn process_direction_line(line: String) -> Vec<Direction> {
 fn part_01() {
     let data = load_file_in_memory("./input.data").unwrap();
     let (directions, map) = transform_data(data);
-
+/*
     let starting_id = "AAA".to_string();
     let end_id = "ZZZ";
 
@@ -132,8 +132,20 @@ println!("Step [{}] : Being at [{}] -> ([{}], [{}]), going {:?}", steps, &walker
             }
         }
     }
+*/
+    let mut texas_ranger: Walker = Walker::new(&map, "AAA", "ZZZ");
+    'directions: loop {
+        for next_step in &directions {
+            if texas_ranger.is_arrived() { break 'directions }
 
-    let final_result = steps;
+println!("Step [{}] : Being at [{}] -> ([{}], [{}]), going {:?}", texas_ranger.steps, texas_ranger.current, &(map.get(texas_ranger.current).unwrap().left_id), &(map.get(texas_ranger.current).unwrap().right_id), next_step);
+
+            texas_ranger.walk(next_step);
+        }
+    }
+
+
+    let final_result = texas_ranger.steps;
 
     println!("Part 1 final result: {}", final_result);
 }
