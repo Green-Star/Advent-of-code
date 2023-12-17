@@ -72,11 +72,9 @@ fn walk(walker: &mut Walker, grid: &HashMap<&str, Node>, direction: &Direction) 
 }
 */
 
-fn transform_data(data: Vec<String>) -> (Vec<Direction>, String, String, HashMap<String, Node>) {
+fn transform_data(data: Vec<String>) -> (Vec<Direction>, HashMap<String, Node>) {
     let mut directions = Vec::new();
     let mut grid = HashMap::new();
-    let mut starting_id = None;
-    let mut end_id = None;
 
     for line in data {
         if line.is_empty() { continue; }
@@ -85,16 +83,12 @@ fn transform_data(data: Vec<String>) -> (Vec<Direction>, String, String, HashMap
             None => directions.append(&mut process_direction_line(line)),
             Some(_) => {
                 let (node_id, node) = process_node_line(line);
-
-                if starting_id == None { starting_id = Some(node_id.clone()) }
-                end_id = Some(node_id.clone());
-
                 grid.insert(node_id, node);
             },
         };
     }
 
-    (directions, starting_id.unwrap(), end_id.unwrap(), grid)
+    (directions, grid)
 }
 
 fn process_node_line(line: String) -> (String, Node) {
@@ -119,14 +113,17 @@ fn process_direction_line(line: String) -> Vec<Direction> {
 
 fn part_01() {
     let data = load_file_in_memory("./input.data").unwrap();
-    let (directions, starting_id, end_id, map) = transform_data(data);
+    let (directions, map) = transform_data(data);
+
+    let starting_id = "AAA".to_string();
+    let end_id = "ZZZ";
 
     let mut walker = (&starting_id, map.get(&starting_id).unwrap());
     let mut steps = 0;
 
     'directions: loop {
         for next_step in &directions {
-            if walker.0 == "DHD" { break 'directions }
+            if walker.0 == end_id { break 'directions }
 
 println!("Step [{}] : Being at [{}] -> ([{}], [{}]), going {:?}", steps, &walker.0, &walker.1.left_id, &walker.1.right_id, next_step);
 
@@ -140,7 +137,7 @@ println!("Step [{}] : Being at [{}] -> ([{}], [{}]), going {:?}", steps, &walker
 
     let final_result = steps;
 
-    println!("Part 2 final result: {}", final_result);
+    println!("Part 1 final result: {}", final_result);
 }
 
 
