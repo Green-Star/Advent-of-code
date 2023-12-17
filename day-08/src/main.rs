@@ -143,10 +143,12 @@ mod part_02 {
 
         steps: u32,
         current: &'a str,
+
+        save_start: String,
     }
     impl Walker<'_> {
         fn new<'a>(grid: &'a HashMap<String, Node>, start: &'a str) -> Walker<'a> {
-            Walker { grid, steps: 0, current: start }
+            Walker { grid, steps: 0, current: start, save_start: start.to_string() }
         }
 
         fn walk(&mut self, direction: &Direction) {
@@ -185,7 +187,7 @@ mod part_02 {
 
 
     pub fn resolve() {
-        let data = load_file_in_memory("./test.data").unwrap();
+        let data = load_file_in_memory("./input.data").unwrap();
         let (directions, starting_nodes, map) = transform_data(data);
 
         let mut walkers: Vec<Walker> = starting_nodes.iter().map(|node| Walker::new(&map, node)).collect();
@@ -193,15 +195,16 @@ mod part_02 {
 
         'directions: loop {
             for next_step in &directions {
+                for w in &walkers {
+                    if w.is_arrived() {
+                        println!("Walker started at ({}) arrived at [{}] after [{}] steps", w.save_start, w.current, w.steps);
+                    }
+                }
+
                 let finished = walkers.iter().map(|walker| walker.is_arrived()).reduce(|all_finished, finished| all_finished == true && finished == true).unwrap();
                 if finished { break 'directions }
 
-
                 walkers.iter_mut().for_each(|walker| walker.walk(next_step));
-
-                for texas_ranger in &walkers {
-                    println!("Step [{}] : Being at [{}] -> ([{}], [{}]), going {:?}", texas_ranger.steps, texas_ranger.current, &(map.get(texas_ranger.current).unwrap().left_id), &(map.get(texas_ranger.current).unwrap().right_id), next_step);
-                }
             }
         }
 
