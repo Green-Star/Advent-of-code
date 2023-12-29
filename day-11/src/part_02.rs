@@ -1,6 +1,5 @@
 
-//const EXPAND_TIMES: u32 = 1000000;
-const EXPAND_TIMES: usize = 1;
+const EXPAND_TIMES: usize = 100-1;
 
 fn transform_data(data: Vec<String>) -> Vec<Galaxy> {
     let mut transformed = Vec::new();
