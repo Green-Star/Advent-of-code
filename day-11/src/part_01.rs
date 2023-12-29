@@ -68,8 +68,8 @@ fn expand_lines(data: Vec<Vec<char>>) -> Vec<Vec<char>> {
 pub fn resolve(input_data_path: &str) {
     let data = crate::core::load_file_in_memory(input_data_path).unwrap();
     let space = transform_data(data);
-    let galaxies = extract_galaxies(space);
-    let pairs = get_pairs_of_galaxies(galaxies);
+    let galaxies = crate::core::extract_galaxies(space);
+    let pairs = crate::core::get_pairs_of_galaxies(galaxies);
 
     let final_result = pairs.iter().fold(0, |sum, (x, y)| sum + x.get_distance(y));
 
