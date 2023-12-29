@@ -1,5 +1,3 @@
-use crate::*;
-
 fn transform_data(data: Vec<String>) -> Vec<Vec<char>> {
     let mut transformed = Vec::new();
     for i in 0..data.len() {
@@ -65,11 +63,47 @@ fn expand_lines(data: Vec<Vec<char>>) -> Vec<Vec<char>> {
     result
 }
 
+fn extract_galaxies(space: Vec<Vec<char>>) -> Vec<Galaxy> {
+    let mut result = Vec::new();
+
+    for line in 0..space.len() {
+        for column in 0..space[line].len() {
+            match space[line][column] {
+                '.' => {},
+                _ => result.push(Galaxy { line, column }),
+            }
+        }
+    }
+
+    result
+}
+
+fn get_pairs_of_galaxies(galaxies: Vec<Galaxy>) -> Vec<(Galaxy, Galaxy)> {
+    let mut result = Vec::new();
+    for i in 0..galaxies.len() {
+        for j in (i + 1)..galaxies.len() {
+            result.push((galaxies[i], galaxies[j]))
+        }
+    }
+    result
+}
+
+#[derive(Debug, Clone, Copy)]
+struct Galaxy {
+    line: usize,
+    column: usize,
+}
+impl Galaxy {
+    fn get_distance(&self, other: &Galaxy) -> usize {
+        self.line.abs_diff(other.line) + self.column.abs_diff(other.column)
+    }
+}
+
 pub fn resolve(input_data_path: &str) {
     let data = crate::core::load_file_in_memory(input_data_path).unwrap();
     let space = transform_data(data);
-    let galaxies = crate::core::extract_galaxies(space);
-    let pairs = crate::core::get_pairs_of_galaxies(galaxies);
+    let galaxies = extract_galaxies(space);
+    let pairs = get_pairs_of_galaxies(galaxies);
 
     let final_result = pairs.iter().fold(0, |sum, (x, y)| sum + x.get_distance(y));
 
