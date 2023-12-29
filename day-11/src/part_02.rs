@@ -1,7 +1,7 @@
 use crate::*;
 
 
-const EXPAND_TIMES: u32 = 1;
+const EXPAND_TIMES: u32 = 1000000;
 
 fn transform_data(data: Vec<String>) -> Vec<Vec<char>> {
     let mut transformed = Vec::new();
@@ -39,8 +39,10 @@ fn expand_columns(data: Vec<Vec<char>>) -> Vec<Vec<char>> {
         }
 
         if is_empty {
-            for i in 0..data.len() {
-                result[i].push(data[i][j]);
+            for _ in 1..EXPAND_TIMES {
+                for i in 0..data.len() {
+                    result[i].push(data[i][j]);
+                }
             }
         }
     }
@@ -60,7 +62,9 @@ fn expand_lines(data: Vec<Vec<char>>) -> Vec<Vec<char>> {
             }
         }
         if is_empty {
-            result.push(data[i].clone());
+            for _ in 1..EXPAND_TIMES {
+                result.push(data[i].clone());
+            }
         }
         result.push(data[i].clone());
     }
@@ -70,14 +74,11 @@ fn expand_lines(data: Vec<Vec<char>>) -> Vec<Vec<char>> {
 
 pub fn resolve(input_data_path: &str) {
     let data = crate::core::load_file_in_memory(input_data_path).unwrap();
-    /*
     let space = transform_data(data);
-    let galaxies = extract_galaxies(space);
-    let pairs = get_pairs_of_galaxies(galaxies);
+    let galaxies = crate::core::extract_galaxies(space);
+    let pairs = crate::core::get_pairs_of_galaxies(galaxies);
 
     let final_result = pairs.iter().fold(0, |sum, (x, y)| sum + x.get_distance(y));
-    */
-    let final_result = 0;
 
     println!("Part 2 final result: {}", final_result);
 }
