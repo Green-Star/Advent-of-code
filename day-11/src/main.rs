@@ -122,12 +122,6 @@ pub fn part_01(input_data_path: &str) {
     let galaxies = extract_galaxies(space);
     let pairs = get_pairs_of_galaxies(galaxies);
 
-    assert_eq!(pairs.len(), 36);
-    assert_eq!(Galaxy{line: 6, column: 1}.get_distance(&Galaxy{line: 11, column: 5}), 9);
-    assert_eq!(Galaxy{line: 0, column: 4}.get_distance(&Galaxy{line: 10, column: 9}), 15);
-    assert_eq!(Galaxy{line: 2, column: 0}.get_distance(&Galaxy{line: 7, column: 12}), 17);
-    assert_eq!(Galaxy{line: 11, column: 0}.get_distance(&Galaxy{line: 11, column: 5}), 5);
-
     let final_result = pairs.iter().fold(0, |sum, (x, y)| sum + x.get_distance(y));
 
     println!("Part 1 final result: {}", final_result);
@@ -135,8 +129,8 @@ pub fn part_01(input_data_path: &str) {
 
 fn main() {
     let now = Instant::now();
-    part_01("./test.data");
-    let elapsed = now.elapsed();
+    part_01("./input.data");
+    let elapsed: std::time::Duration = now.elapsed();
     println!("Part 1 found in {:?}s", elapsed.as_secs());
     let now = Instant::now();
     //part_02::resolve();
