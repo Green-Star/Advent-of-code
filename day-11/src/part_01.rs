@@ -1,9 +1,4 @@
-use crate::core;
 use crate::*;
-
-use std::fs::File;
-use std::io::{BufRead, BufReader};
-use std::time::Instant;
 
 fn transform_data(data: Vec<String>) -> Vec<Vec<char>> {
     let mut transformed = Vec::new();
