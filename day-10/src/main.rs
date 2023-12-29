@@ -57,8 +57,8 @@ impl Tile {
             Self::EastWest => ((0, 1), (0, -1)),
             Self::NorthEast => ((-1, 0), (0, 1)),
             Self::NorthWest => ((-1, 0), (0, -1)),
-            Self::SouthWest /* | Self::StartingNode */ => ((1, 0), (0, -1)),  /* Starting node is a south west node */
-            Self::SouthEast | Self::StartingNode => ((1, 0), (0, 1)),   /* In exmaples, starting node is a south east node */
+            Self::SouthWest | Self::StartingNode => ((1, 0), (0, -1)),  /* Starting node is a south west node */
+            Self::SouthEast /* | Self::StartingNode */ => ((1, 0), (0, 1)),   /* In exmaples, starting node is a south east node */
             _ => panic!("Tile: Can't move from tile {:?}", tile),
         }
     }
@@ -421,8 +421,11 @@ pub fn part_01(input_data_path: &str) {
 
 fn main() {
     let now = Instant::now();
+    /*
     part_01("./test-01.data");
     part_01("./test-02.data");
+    */
+    part_01("./input.data");
     let elapsed = now.elapsed();
     println!("Part 1 found in {:?}s", elapsed.as_secs());
     let now = Instant::now();
