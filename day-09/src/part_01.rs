@@ -1,3 +1,5 @@
+use std::result;
+
 fn transform_data(data: Vec<String>) -> Vec<Oasis> {
     let mut transformed = Vec::new();
 
@@ -57,6 +59,10 @@ impl Oasis {
 
         next_line
     }
+
+    fn compute_final_result(&self) -> i64 {
+        self.history.iter().rev().fold(0, |result, h| result + h.last().unwrap()) + self.input.last().unwrap()
+    }
 }
 
 pub fn resolve(input_data_path: &str) {
@@ -64,15 +70,7 @@ pub fn resolve(input_data_path: &str) {
     let transformed_data = transform_data(data);
     let computed_data: Vec<Oasis> = transformed_data.into_iter().map(|oasis| oasis.compute().unwrap()).collect();
 
-    for i in computed_data {
-        println!("- OASIS -");
-        println!("{:?}", i.input);
-        for s in i.history {
-            println!("[{:?}]", s);
-        }
-    }
+    let final_result = computed_data.iter().fold(0, |result, oasis| result + oasis.compute_final_result());
 
-    let final_result = 0;
-
-    println!("Part 2 final result: {}", final_result);
+    println!("Part 1 final result: {}", final_result);
 }
