@@ -1,5 +1,3 @@
-use std::result;
-
 fn transform_data(data: Vec<String>) -> Vec<Oasis> {
     let mut transformed = Vec::new();
 
@@ -10,7 +8,6 @@ fn transform_data(data: Vec<String>) -> Vec<Oasis> {
     transformed
 }
 
-//#[derive(Debug, Clone, Copy)]
 struct Oasis {
     input: Vec<i64>,
 
