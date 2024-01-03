@@ -13,3 +13,13 @@ pub fn load_file_in_memory(filepath: &str) -> std::io::Result<Vec<String>> {
 
     Ok(data)
 }
+
+/* Input string examples:
+    [ 41 48 83 86 17 ]
+    [ 83 86  6 31 17  9 48 53]
+
+    Result: Vec of numbers
+*/
+pub fn parse_number_list<T: std::str::FromStr>(s: &str) -> Vec<T> {
+    s.split(" ").filter_map(|s| s.parse::<T>().ok()).collect()
+}
