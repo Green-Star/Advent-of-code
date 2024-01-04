@@ -1,6 +1,4 @@
-use std::cmp::min;
 use std::fs::File;
-use std::i128;
 use std::io::{BufRead, BufReader};
 use std::time::Instant;
 
@@ -21,24 +19,92 @@ fn transform_data(data: Vec<String>) -> Vec<Lava> {
     let mut result = Vec::new();
 
     let mut line = Lava { lines: Vec::new() };
+    let mut current_line = 0;
     for s in data {
         if s.is_empty() {
             result.push(line);
             line = Lava { lines: Vec::new() };
+            current_line = 0;
+            continue;
         }
+
+        line.lines.push(Vec::new());
+        for c in s.chars() {
+            line.lines[current_line].push(c);
+        }
+        current_line += 1;
     }
+    result.push(line);
 
     result
 }
 
+#[derive(Debug)]
 struct Lava {
     lines: Vec<Vec<char>>,
+}
+impl Lava {
+    fn find_horizontal_symmetry(&self) -> Option<usize> {
+        for i in 1..self.lines.len() {
+            let mut different = false;
+            for j in 0..self.lines[i].len() {
+                if self.lines[i-1][j] != self.lines[i][j] {
+                    different = true;
+                    break;
+                }
+            }
+            if different == false {
+                if self.check_symmetry_in_lines(i-1, i) {
+                    println!("Found in line horizontal {}", i);
+                    return Some(i); }
+            }
+        }
+        None
+    }
+
+    fn check_symmetry_in_lines(&self, mut start: usize, mut end: usize) -> bool {
+        loop {
+            for j in 0..self.lines[start].len() {
+                if self.lines[start][j] != self.lines[end][j] {
+                    return false;
+                }
+            }
+
+            if start == 0 || end == self.lines.len() - 1 {
+                return true;
+            }
+
+            start -= 1;
+            end += 1;
+        }
+    }
+
+    fn find_vertical_symmetry(&self) -> Option<usize> {
+        None
+    }
+
+    fn get_value(&self) -> i64 {
+        if let Some(value) = self.find_horizontal_symmetry() {
+            i64::try_from(value).unwrap() * 100
+        }
+        else if let Some(value) = self.find_vertical_symmetry() {
+            i64::try_from(value).unwrap()
+        }
+        else {
+            0
+        }
+    }
 }
 
 fn part_01(filepath: &str) {
     let data = load_file_in_memory(filepath).unwrap();
+    let lavas = transform_data(data);
 
-    println!("Part 1 final result: {}", 0);
+    println!("[{}]", lavas.len());
+
+    let final_result = lavas.iter().fold(0, |result, lava| result + lava.get_value());
+
+    println!("Part 1 final result: {}", final_result);
 }
 
 
