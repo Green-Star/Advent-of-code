@@ -54,9 +54,7 @@ impl Lava {
                 }
             }
             if different == false {
-                if self.check_symmetry_in_lines(i-1, i) {
-                    println!("Found in line horizontal {}", i);
-                    return Some(i); }
+                if self.check_symmetry_in_lines(i-1, i) { return Some(i); }
             }
         }
         None
@@ -80,7 +78,36 @@ impl Lava {
     }
 
     fn find_vertical_symmetry(&self) -> Option<usize> {
+        for j in 1..self.lines[0].len() {
+            let mut different = false;
+            for i in 0..self.lines.len() {
+                if self.lines[i][j-1] != self.lines[i][j] {
+                    different = true;
+                    break;
+                }
+            }
+            if different == false {
+                if self.check_symmetry_in_columns(j-1, j) {
+                    return Some(j);
+                }
+            }
+        }
         None
+    }
+
+    fn check_symmetry_in_columns(&self, mut start: usize, mut end: usize) -> bool {
+        loop {
+            for i in 0..self.lines.len() {
+                if self.lines[i][start] != self.lines[i][end] { return false }
+            }
+
+            if start == 0 || end == self.lines[0].len() - 1 {
+                return true;
+            }
+
+            start -= 1;
+            end += 1;
+        }
     }
 
     fn get_value(&self) -> i64 {
@@ -115,7 +142,7 @@ fn part_02(filepath: &str) {
 
 fn main() {
     let now = Instant::now();
-    part_01("./test.data");
+    part_01("./input.data");
     let elapsed: std::time::Duration = now.elapsed();
     println!("Part 1 found in {:?}s", elapsed.as_secs());
     let now = Instant::now();
