@@ -3,10 +3,6 @@ pub fn resolve(input_data_path: &str) {
     let (left_locations, right_locations) = transform_data(data);
     let pairs = pair_locations(left_locations, right_locations);
 
-    for i in 0..pairs.len() {
-        println!("({:?}, {:?})", pairs[i].0, pairs[i].1);
-    }
-
     let final_result = pairs.iter().fold(0, |sum, (x, y)| sum + get_distance(x, y));
 
     println!("Part 1 final result: {}", final_result);
