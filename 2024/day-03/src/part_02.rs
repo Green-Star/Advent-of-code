@@ -4,7 +4,6 @@ use regex::Regex;
 pub fn resolve(input_data_path: &str) {
     let data = crate::core::load_file_in_memory(input_data_path).unwrap();
     let products = transform_data(data);
-//    let products = get_multiplications(data);
 
     let final_result: i32 = products.iter().map(|e| e.value()).sum();
 
@@ -21,26 +20,6 @@ impl Product {
         self.x * self.y
     }
 }
-
-/*
-fn transform_data(data: Vec<String>) -> Vec<Product> {
-    let mut result = Vec::new();
-    let mut enabled = true;
-
-    for line in data {
-        /* Parse les don't() */
-            /* Pour chaque don't, on cherche un do() et on skip ce qu'il y entre les 2 */
-        /*  */
-        for (_, [a, b]) in regex.captures_iter(&line).map(|r| r.extract()) {
-            let x = a.parse().unwrap();
-            let y = b.parse().unwrap();
-            result.push(Product { x, y });
-        }
-    }
-
-    result
-}
-    */
 
 fn transform_data(data: Vec<String>) -> Vec<Product> {
     let mut result = Vec::new();
