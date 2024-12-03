@@ -1,63 +1,69 @@
 use std::i32;
+use regex::Regex;
 
 pub fn resolve(input_data_path: &str) {
     let data = crate::core::load_file_in_memory(input_data_path).unwrap();
+    let products = transform_data(data);
+//    let products = get_multiplications(data);
 
-    let final_result = 0;
+    let final_result: i32 = products.iter().map(|e| e.value()).sum();
 
-    println!("Part 2 final result: {}", final_result);
+    println!("Part 1 final result: {}", final_result);
 }
 
-#[derive(Debug, Clone)]
-struct Report {
-    level: Vec<i32>,
+#[derive(Debug, Clone, Copy)]
+struct Product {
+    x: i32,
+    y: i32,
 }
-impl Report {
-    fn analyze(&self) -> Result<i32, usize> {
-        self.level.windows(2).enumerate().fold(Ok(0), |previous, (index, slice)| {
-            match previous {
-                Err(e) => Err(e),
-                Ok(previous_diff) => {
-                    let diff = slice[0] - slice[1];
-                    match previous_diff {
-                        0 => if 1 <= diff.abs() && diff.abs() <= 3 { Ok(diff) } else { Err(index) },
-                        i32::MIN..=-1 => if -3 <= diff && diff <= -1 { Ok(diff) } else { Err(index) },
-                        1..=i32::MAX  => if 1 <= diff && diff <= 3 { Ok(diff) } else { Err(index) },
-                    }
-                }
-            }
-        })
-    }
-
-    fn is_safe(&self) -> bool {
-        match self.analyze() {
-            Ok(_) => true,
-            Err(_) => false,
-        }
+impl Product {
+    fn value(&self) -> i32 {
+        self.x * self.y
     }
 }
 
-fn transform_data(data: Vec<String>) -> Vec<Report> {
+/*
+fn transform_data(data: Vec<String>) -> Vec<Product> {
     let mut result = Vec::new();
+    let mut enabled = true;
 
-    for s in data {
-        let mut line = Vec::new();
-        for i in s.split_whitespace() {
-            line.push(i.parse().unwrap());
+    for line in data {
+        /* Parse les don't() */
+            /* Pour chaque don't, on cherche un do() et on skip ce qu'il y entre les 2 */
+        /*  */
+        for (_, [a, b]) in regex.captures_iter(&line).map(|r| r.extract()) {
+            let x = a.parse().unwrap();
+            let y = b.parse().unwrap();
+            result.push(Product { x, y });
         }
-        result.push(Report { level: line });
     }
 
     result
 }
+    */
 
-fn clean_reports(reports: Vec<Report>) -> Vec<Report> {
+fn transform_data(data: Vec<String>) -> Vec<Product> {
     let mut result = Vec::new();
+    let mut enabled = true;
 
-    for mut r in reports {
-        match r.analyze() {
-            Ok(_) => result.push(r),
-            Err(index) => { r.level.remove(index); result.push(r); },
+    let regex = Regex::new(r"(mul\(\d{1,3},\d{1,3}\))|(do\(\))|(don't\(\))").unwrap();
+    let mult_regex = Regex::new(r"\((\d{1,3}),(\d{1,3})\)").unwrap();
+
+    for line in data {
+        for (head, [matched]) in regex.captures_iter(&line).map(|r| r.extract()) {
+            match head {
+                "do()" => { println!("Found do !"); enabled = true },
+                "don't()" => { println!("Found don't !"); enabled = false },
+                _ => {
+                    if enabled == false { continue; }
+                    println!("Found mult !");
+                    for (_, [a, b]) in mult_regex.captures_iter(&matched).map(|r| r.extract()) {
+                        let x = a.parse().unwrap();
+                        let y = b.parse().unwrap();
+                        result.push(Product { x, y });
+                    }
+                }
+            }
         }
     }
 
