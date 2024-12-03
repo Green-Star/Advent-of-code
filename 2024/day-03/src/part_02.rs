@@ -2,10 +2,8 @@ use std::i32;
 
 pub fn resolve(input_data_path: &str) {
     let data = crate::core::load_file_in_memory(input_data_path).unwrap();
-    let reports = transform_data(data);
-    let reports = clean_reports(reports);
 
-    let final_result = reports.iter().filter(|report| report.is_safe()).collect::<Vec<&Report>>().len();
+    let final_result = 0;
 
     println!("Part 2 final result: {}", final_result);
 }

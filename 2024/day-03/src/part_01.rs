@@ -1,49 +1,36 @@
 use std::i32;
+use regex::Regex;
 
 pub fn resolve(input_data_path: &str) {
     let data = crate::core::load_file_in_memory(input_data_path).unwrap();
-    let reports = transform_data(data);
+    let products = transform_data(data);
 
-    let final_result = reports.iter().filter(|report| report.is_safe()).collect::<Vec<&Report>>().len();
+    let final_result: i32 = products.iter().map(|e| e.value()).sum();
 
     println!("Part 1 final result: {}", final_result);
 }
 
-#[derive(Debug, Clone)]
-struct Report {
-    level: Vec<i32>,
+#[derive(Debug, Clone, Copy)]
+struct Product {
+    x: i32,
+    y: i32,
 }
-impl Report {
-    fn is_safe(&self) -> bool {
-        let is_safe = self.level.windows(2).fold(Ok(0), |previous, slice| {
-                                match previous {
-                                    Err(e) => Err(e),
-                                    Ok(previous_diff) => {
-                                        let diff = slice[0] - slice[1];
-                                        match previous_diff {
-                                            0 => if 1 <= diff.abs() && diff.abs() <= 3 { Ok(diff) } else { Err(()) },
-                                            i32::MIN..=-1 => if -3 <= diff && diff <= -1 { Ok(diff) } else { Err(()) },
-                                            1..=i32::MAX  => if 1 <= diff && diff <= 3 { Ok(diff) } else { Err(()) },
-                                        }
-                                    }
-                                }
-                            });
-        match is_safe {
-            Ok(_) => true,
-            Err(_) => false,
-        }
+impl Product {
+    fn value(&self) -> i32 {
+        self.x * self.y
     }
 }
 
-fn transform_data(data: Vec<String>) -> Vec<Report> {
+fn transform_data(data: Vec<String>) -> Vec<Product> {
     let mut result = Vec::new();
+    let regex = Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)").unwrap();
 
-    for s in data {
-        let mut line = Vec::new();
-        for i in s.split_whitespace() {
-            line.push(i.parse().unwrap());
+    for line in data {
+        for (_, [a, b]) in regex.captures_iter(&line).map(|r| r.extract()) {
+            let x = a.parse().unwrap();
+            let y = b.parse().unwrap();
+            result.push(Product { x, y });
         }
-        result.push(Report { level: line });
     }
 
     result
