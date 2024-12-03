@@ -4,13 +4,9 @@ pub fn resolve(input_data_path: &str) {
     let data = crate::core::load_file_in_memory(input_data_path).unwrap();
     let reports = transform_data(data);
 
-    let final_result = reports.iter().filter(|report| report.is_safe()).collect::<Vec<&Report>>();
+    let final_result = reports.iter().filter(|report| report.is_safe()).collect::<Vec<&Report>>().len();
 
-    for i in &final_result {
-        println!("{:?}", i);
-    }
-
-    println!("Part 1 final result: {}", final_result.len());
+    println!("Part 1 final result: {}", final_result);
 }
 
 #[derive(Debug, Clone)]
