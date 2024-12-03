@@ -77,8 +77,7 @@ fn clean_report(report: &Report) -> Result<&Report, ()> {
     let mut cleaned_report = Vec::new();
 
     for i in 0..report.level.len() {
-        let mut r = report.clone();
-        r.level.remove(i);
+        let r = Report { level: [ &report.level[0..i], &report.level[i+1..] ].concat() };
         cleaned_report.push(r);
     }
 
