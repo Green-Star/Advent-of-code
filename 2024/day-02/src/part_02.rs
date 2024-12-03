@@ -3,9 +3,15 @@ use std::i32;
 pub fn resolve(input_data_path: &str) {
     let data = crate::core::load_file_in_memory(input_data_path).unwrap();
     let reports = transform_data(data);
-    let reports = clean_reports(reports);
 
-    let final_result = reports.iter().filter(|report| report.is_safe()).collect::<Vec<&Report>>().len();
+    let safe_reports = reports.iter().filter(|report| report.is_safe()).collect::<Vec<&Report>>();
+    let unsafe_reports = reports.iter().filter(|report| report.is_safe() == false).collect::<Vec<&Report>>();
+
+    let cleaned_reports = clean_unsafe_reports(unsafe_reports);
+
+    let final_result = safe_reports.len() + cleaned_reports.len();
+    println!("Final result: {} safe reports, {} unsafe reports, {} total", safe_reports.len(), cleaned_reports.len(), final_result);
+
 
     println!("Part 2 final result: {}", final_result);
 }
@@ -53,15 +59,36 @@ fn transform_data(data: Vec<String>) -> Vec<Report> {
     result
 }
 
-fn clean_reports(reports: Vec<Report>) -> Vec<Report> {
+fn clean_unsafe_reports(unsafe_reports: Vec<&Report>) -> Vec<&Report> {
     let mut result = Vec::new();
 
-    for mut r in reports {
-        match r.analyze() {
+    for r in unsafe_reports {
+        match clean_report(&r) {
+            Err(_) => {},
             Ok(_) => result.push(r),
-            Err(index) => { r.level.remove(index); result.push(r); },
         }
     }
 
     result
+}
+
+
+fn clean_report(report: &Report) -> Result<&Report, ()> {
+    let mut cleaned_report = Vec::new();
+
+    for i in 0..report.level.len() {
+        let mut r = report.clone();
+        r.level.remove(i);
+        cleaned_report.push(r);
+    }
+
+    for r in cleaned_report {
+        if r.is_safe() {
+            println!("Found clean report {:?} from {:?}", r, report);
+            return Ok(report);
+        }
+    }
+
+    println!("Report {:?} is not clean", report);
+    Err(())
 }
