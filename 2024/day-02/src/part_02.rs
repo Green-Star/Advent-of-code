@@ -21,16 +21,16 @@ struct Report {
     level: Vec<i32>,
 }
 impl Report {
-    fn analyze(&self) -> Result<i32, usize> {
-        self.level.windows(2).enumerate().fold(Ok(0), |previous, (index, slice)| {
+    fn analyze(&self) -> Result<i32, ()> {
+        self.level.windows(2).fold(Ok(0), |previous, slice| {
             match previous {
                 Err(e) => Err(e),
                 Ok(previous_diff) => {
                     let diff = slice[0] - slice[1];
                     match previous_diff {
-                        0 => if 1 <= diff.abs() && diff.abs() <= 3 { Ok(diff) } else { Err(index) },
-                        i32::MIN..=-1 => if -3 <= diff && diff <= -1 { Ok(diff) } else { Err(index) },
-                        1..=i32::MAX  => if 1 <= diff && diff <= 3 { Ok(diff) } else { Err(index) },
+                        0 => if 1 <= diff.abs() && diff.abs() <= 3 { Ok(diff) } else { Err(()) },
+                        i32::MIN..=-1 => if -3 <= diff && diff <= -1 { Ok(diff) } else { Err(()) },
+                        1..=i32::MAX  => if 1 <= diff && diff <= 3 { Ok(diff) } else { Err(()) },
                     }
                 }
             }
