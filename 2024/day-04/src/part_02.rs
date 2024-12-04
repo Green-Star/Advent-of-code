@@ -3,8 +3,6 @@ pub fn resolve(input_data_path: &str) {
     let grid = transform_data(data);
     let xmas = find_all_x_mas(&grid);
 
-    println!("{:?} match", xmas.len());
-    println!("{:?}", xmas);
     let final_result = xmas.iter().filter(|o| **o).count();
 
     println!("Part 2 final result: {}", final_result);
