@@ -5,7 +5,7 @@ pub fn resolve(input_data_path: &str) {
 
     println!("{:?} match", xmas.len());
     println!("{:?}", xmas);
-    let final_result = xmas.iter().filter(|o| o.is_ok()).count();
+    let final_result = xmas.iter().filter(|o| **o).count();
 
     println!("Part 2 final result: {}", final_result);
 }
@@ -24,7 +24,7 @@ fn transform_data(data: Vec<String>) -> Vec<Vec<char>> {
     result
 }
 
-fn find_all_x_mas(grid: &Vec<Vec<char>>) -> Vec<Result<(), ()>> {
+fn find_all_x_mas(grid: &Vec<Vec<char>>) -> Vec<bool> {
     let mut result = Vec::new();
 
     for i in 0..grid.len() {
@@ -38,20 +38,19 @@ fn find_all_x_mas(grid: &Vec<Vec<char>>) -> Vec<Result<(), ()>> {
     result
 }
 
-fn find_one_x_mas(grid: &Vec<Vec<char>>, index: (usize, usize)) -> Result<(), ()> {
+fn find_one_x_mas(grid: &Vec<Vec<char>>, index: (usize, usize)) -> bool {
     let upper_left = (index.0.checked_add_signed(-1), index.1.checked_add_signed(-1));
     let upper_right = (index.0.checked_add_signed(1), index.1.checked_add_signed(-1));
     let bottom_left = (index.0.checked_add_signed(-1), index.1.checked_add_signed(1));
     let bottom_right = (index.0.checked_add_signed(1), index.1.checked_add_signed(1));
 
-    let indexes = vec![upper_left, upper_right, bottom_left, bottom_right];
-    if indexes.iter().all(|i| is_valid_index(grid, i)) == false { return Err(()) }
+    let indexes = vec![upper_left, bottom_right, bottom_left, upper_right];
+    if indexes.iter().all(|i| is_valid_index(grid, i)) == false { return false }
 
     let chars: Vec<char> = indexes.iter().map(|index| grid[index.0.unwrap()][index.1.unwrap()]).collect();
-    match (chars.iter().filter(|c| **c == 'M').count(), chars.iter().filter(|c| **c == 'S').count()) {
-        (2, 2) => Ok(()),
-        _ => Err(()),
-    }
+    let mas = vec![&(chars[..2]), &(chars[2..])];
+
+    mas.iter().all(|v| is_mas(v))
 }
 
 fn is_valid_index(grid: &Vec<Vec<char>>, index: &(Option<usize>, Option<usize>)) -> bool {
@@ -63,4 +62,11 @@ fn is_valid_index(grid: &Vec<Vec<char>>, index: &(Option<usize>, Option<usize>))
         _ => return false,
     }
     true
+}
+
+fn is_mas(vector: &[char]) -> bool {
+    match (vector.iter().filter(|c| **c == 'M').count(), vector.iter().filter(|c| **c == 'S').count()) {
+        (1, 1) => true,
+        _ => false,
+    }
 }
