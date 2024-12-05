@@ -1,11 +1,12 @@
 pub fn resolve(input_data_path: &str) {
     let data = crate::core::load_file_in_memory(input_data_path).unwrap();
-    let (page_ordering, update_list) = transform_data(data);
+    let (rules, updates) = transform_data(data);
+    let update_list = transform_updates(&updates);
 
-    println!("{:?}", page_ordering);
-    println!("{:?}", update_list);
+    let sanitized_updates: Vec<&Update> = update_list.iter().filter(|update| update.iter().all(|printing_order| printing_order.validate(&rules))).collect();
+    let sanitized_extract: Vec<&i32> = sanitized_updates.iter().map(|v| v[v.len()/2].page).collect();
 
-    let final_result = 0;
+    let final_result = sanitized_extract.iter().fold(0, |sum, x| sum + **x);
 
     println!("Part 1 final result: {}", final_result);
 }
@@ -48,9 +49,6 @@ fn parse_number_list<T: std::str::FromStr>(s: &str, sep: &str) -> Vec<T> {
 }
 
 
-
-
-
 #[derive(Debug)]
 struct PageOrdering {
     first: i32,
@@ -71,6 +69,13 @@ impl PrintingOrder<'_> {
     }
 }
 type Update<'a> = Vec<PrintingOrder<'a>>;
+
+fn transform_updates(list: &Vec<Vec<i32>>) -> Vec<Update> {
+        list.iter().map(|l| get_update(&l)).collect()
+}
+fn get_update(list: &Vec<i32>) -> Update {
+    list.iter().enumerate().map(|(index, _)| PrintingOrder { page: &list[index], printed_before: &(list[0..index]), printed_after: &(list[index+1..])}).collect()
+}
 
 fn main() {
   let test: Vec<i32> = vec![75, 47, 61, 53, 29];
