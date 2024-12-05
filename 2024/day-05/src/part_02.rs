@@ -1,4 +1,4 @@
-use std::{ops::Index, result};
+use std::cmp::Ordering;
 
 pub fn resolve(input_data_path: &str) {
     let data = crate::core::load_file_in_memory(input_data_path).unwrap();
@@ -10,7 +10,7 @@ pub fn resolve(input_data_path: &str) {
 
     println!("{:?}", wrong_updates);
 
-    let fixed_updates: Vec<Vec<i32>> = wrong_updates.into_iter().map(|wrong_update| fix_update(wrong_update)).collect();
+    let fixed_updates: Vec<Vec<i32>> = wrong_updates.into_iter().map(|wrong_update| fix_update(wrong_update, &rules)).collect();
     println!("{:?}", fixed_updates);
 
 //    let sanitized_extract: Vec<&i32> = sanitized_updates.iter().map(|v| v[v.len()/2].page).collect();
@@ -87,6 +87,15 @@ fn get_update(list: &Vec<i32>) -> Update {
     list.iter().enumerate().map(|(index, _)| PrintingOrder { page: &list[index], printed_before: &(list[0..index]), printed_after: &(list[index+1..])}).collect()
 }
 
-fn fix_update(update: Vec<i32>) -> Vec<i32> {
+fn fix_update(mut update: Vec<i32>, rules: &Vec<PageOrdering>) -> Vec<i32> {
+    update.sort_by(|a, b| sort_pages(a, b, rules));
+
     update
+}
+fn sort_pages(a: &i32, b: &i32, rules: &Vec<PageOrdering>) -> Ordering {
+    if rules.iter().any(|rule| &(rule.first) == a && &(rule.second) == b) { return Ordering::Less }
+    if rules.iter().any(|rule| &(rule.first) == b && &(rule.second) == a) { return Ordering::Greater }
+
+    println!("No direct rule for ({} | {})!!!", a, b);
+    Ordering::Equal
 }
