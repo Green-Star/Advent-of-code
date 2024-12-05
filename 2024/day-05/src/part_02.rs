@@ -13,10 +13,8 @@ pub fn resolve(input_data_path: &str) {
     let fixed_updates: Vec<Vec<i32>> = wrong_updates.into_iter().map(|wrong_update| fix_update(wrong_update, &rules)).collect();
     println!("{:?}", fixed_updates);
 
-//    let sanitized_extract: Vec<&i32> = sanitized_updates.iter().map(|v| v[v.len()/2].page).collect();
-
-//    let final_result = sanitized_extract.iter().fold(0, |sum, x| sum + **x);
-    let final_result = 0;
+    let sanitized_extract: Vec<i32> = fixed_updates.iter().map(|v| v[v.len()/2]).collect();
+    let final_result = sanitized_extract.iter().fold(0, |sum, x| sum + *x);
 
     println!("Part 2 final result: {}", final_result);
 }
