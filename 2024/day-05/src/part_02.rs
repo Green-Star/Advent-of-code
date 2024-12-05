@@ -5,10 +5,12 @@ pub fn resolve(input_data_path: &str) {
     let (rules, updates) = transform_data(data);
     let update_list = transform_updates(&updates);
 
-    let wrong_updates_indexes: Vec<usize> = update_list.iter().enumerate().filter(|(index, update)| update.iter().any(|printing_order| printing_order.validate(&rules) == false)).map(|(index, _)| index).collect();
+    let wrong_updates_indexes: Vec<usize> = update_list.iter().enumerate().filter(|(_, update)| update.iter().any(|printing_order| printing_order.validate(&rules) == false)).map(|(index, _)| index).collect();
     let wrong_updates: Vec<Vec<i32>> = wrong_updates_indexes.iter().map(|index| updates[*index].clone()).collect();
 
     println!("{:?}", wrong_updates);
+
+    println!("*****");
 
     let fixed_updates: Vec<Vec<i32>> = wrong_updates.into_iter().map(|wrong_update| fix_update(wrong_update, &rules)).collect();
     println!("{:?}", fixed_updates);
