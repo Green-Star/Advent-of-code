@@ -11,7 +11,7 @@ fn transform_data(data: Vec<String>) -> Vec<String> {
   let mut result = Vec::new();
 
   for line in data {
-    result.push(line);
+      result.push(line);
   }
 
   result
