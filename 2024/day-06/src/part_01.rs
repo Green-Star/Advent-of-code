@@ -3,24 +3,7 @@ pub fn resolve(input_data_path: &str) {
   let data = transform_data(data);
   let mut lab = create_lab(data);
 
-  for i in &lab.map {
-    for p in i {
-      if p.patrolled == Some('X') { print!("[X]") }
-      else { print!("[{}]", p.c) }
-    }
-    println!();
-  }
-  println!("*****");
-
   lab.patrol();
-
-  for i in &lab.map {
-    for p in i {
-      if p.patrolled == Some('X') { print!("[X]") }
-      else { print!("[{}]", p.c) }
-    }
-    println!();
-  }
 
   let final_result = lab.get_patrolled_position();
 
