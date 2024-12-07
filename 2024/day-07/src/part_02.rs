@@ -52,13 +52,41 @@ impl Calibration {
       let y = self.operands.remove(0);
 
       for x in &(self.partial_results) {
-        let (plus, mult) = (x + y, x * y);
+        let (plus, mult, conc) = (x + y, x * y, concatenate(x, y));
         if plus <= self.final_result { result.push(plus); }
         if mult <= self.final_result { result.push(mult); }
+        if conc <= self.final_result { result.push(conc); }
       }
 
       self.partial_results = result;
     }
     self.found = self.partial_results.iter().any(|x| *x == self.final_result);
   }
+}
+
+fn get_number_length(number: u64) -> u32 {
+  let mut len = 1;
+  let mut x = number;
+
+  while x / 10 > 0 {
+    len += 1;
+    x = x / 10;
+  }
+
+  len
+}
+fn concatenate(x: &u64, y: u64) -> u64 {
+  let mut len = get_number_length(y);
+  let mut a = *x;
+  let mut b = y;
+
+  while len > 0 {
+    let div = 10_u64.pow(len - 1);
+    a *= 10;
+    a += b / div;
+    b = b % div;
+    len -= 1;
+  }
+
+  a
 }
