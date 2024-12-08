@@ -5,34 +5,26 @@ pub fn resolve(input_data_path: &str) {
   let (mut city, antennas_list) = transform_data(data);
   let antenna_map = group_antennas(antennas_list);
   let paired_antennas = pair_antennas(&antenna_map);
-  println!("{:?}", paired_antennas);
 
   for p in paired_antennas {
-    let (a, b) = compute_antinode(&city, p);
-    match a {
-        Some((x, y)) => match city[x][y].antinode {
-            None => city[x][y].antinode = Some(1),
-            Some(_) => city[x][y].antinode = Some(1),
-        },
-        _ => {},
-    }
-    match b {
-      Some((x, y)) => match city[x][y].antinode {
-          None => city[x][y].antinode = Some(1),
-          Some(_) => city[x][y].antinode = Some(1),
-      },
-      _ => {},
+    let antinodes = compute_antinode(&city, p);
+
+    for (x, y) in antinodes {
+      match city[x][y].antinode {
+        None => city[x][y].antinode = Some(1),
+        Some(n) => city[x][y].antinode = Some(n + 1),
+      }
     }
   }
 
   let final_result = city.iter().map(|l| l.iter().fold(0, |sum, location| {
     match location.antinode {
-        Some(x) => sum + x,
+        Some(_) => sum + 1,
         None => sum,
     }
   })).sum::<i32>();
 
-  println!("Part 1 final result: {}", final_result);
+  println!("Part 2 final result: {}", final_result);
 }
 
 fn transform_data(data: Vec<String>) -> (Vec<Vec<CityLocation>>, Vec<Antenna>) {
@@ -45,9 +37,11 @@ fn transform_data(data: Vec<String>) -> (Vec<Vec<CityLocation>>, Vec<Antenna>) {
     for c in data[i].chars() {
       if c.is_digit(36) {
         antennas.push(Antenna { frequency: c, position: (i, j) });
+        chars.push(CityLocation { c, antinode: Some(1) }); // There's always at least 3 antennas for each frequency, so each antenna is itself an antinode (since it it aligned with at least two other antennas on its frequency)
+      } else {
+        chars.push(CityLocation { c, antinode: None });
       }
       j += 1;
-      chars.push(CityLocation { c, antinode: None });
     }
     city.push(chars);
   }
@@ -83,11 +77,40 @@ fn pair_antennas(antenna_map: &HashMap<char, Vec<Antenna>>) -> Vec<(Antenna, Ant
 
   result
 }
-fn compute_antinode(city: &Vec<Vec<CityLocation>>, paired_antennas: (Antenna, Antenna)) -> (Option<(usize, usize)>, Option<(usize, usize)>) {
-  let (a, b) = paired_antennas;
+/* Create a vector of position (cf un peu comme en dessous) */
+fn compute_antinode(city: &Vec<Vec<CityLocation>>, paired_antennas: (Antenna, Antenna)) -> Vec<(usize, usize)> {
+  let mut result = vec![];
+
+  let (mut a, mut b) = paired_antennas;
   let offset_a = ((a.position.0 as isize) - (b.position.0 as isize), (a.position.1 as isize) - (b.position.1 as isize));
   let offset_b = ((b.position.0 as isize) - (a.position.0 as isize), (b.position.1 as isize) - (a.position.1 as isize));
 
+  loop {
+    let antinode_position = (a.position.0.checked_add_signed(offset_a.0), a.position.1.checked_add_signed(offset_a.1));
+    match antinode_position {
+        (Some(x), Some(y)) => {
+          if x >= city.len() { break }
+          if y >= city[x].len() { break }
+          result.push((x, y));
+          a = Antenna { frequency: a.frequency, position: (x, y) };
+        },
+        _ => break,
+    }
+  }
+  loop {
+    let antinode_position = (b.position.0.checked_add_signed(offset_b.0), b.position.1.checked_add_signed(offset_b.1));
+    match antinode_position {
+        (Some(x), Some(y)) => {
+          if x >= city.len() { break }
+          if y >= city[x].len() { break }
+          result.push((x, y));
+          b = Antenna { frequency: b.frequency, position: (x, y) };
+        },
+        _ => break,
+    }
+  }
+
+  /*
   println!("({:?} - {:?}) -> ({:?}, {:?})", a, b, offset_a, offset_b);
 
   let mut first_antinode_position = (a.position.0.checked_add_signed(offset_a.0), a.position.1.checked_add_signed(offset_a.1));
@@ -119,6 +142,8 @@ fn compute_antinode(city: &Vec<Vec<CityLocation>>, paired_antennas: (Antenna, An
   }
 
   (a_antinode_position, b_antinode_position)
+  */
+  result
 }
 
 #[derive(Debug, Copy, Clone)]
