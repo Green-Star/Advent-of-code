@@ -193,15 +193,4 @@ impl Lab {
 
       self.patrol()
     }
-
-    fn get_patrolled_position(&self) -> usize {
-      let mut patrolled_lines = Vec::new();
-
-      for line in &(self.map) {
-        let patrolled_position: Vec<&Position> = line.iter().filter(|p| p.patrolled.is_some()).collect();
-        patrolled_lines.push(patrolled_position);
-      }
-
-      patrolled_lines.iter().fold(0, |sum, line| sum + line.len())
-    }
 }
