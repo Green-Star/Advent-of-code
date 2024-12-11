@@ -6,9 +6,8 @@ pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
   let mut stones = transform_data(data);
 
-  for i in 1..=25 {
+  for _ in 1..=75 {
     stones = blink(stones);
-    println!("{i}/25...");
   }
 
   let final_result = stones.values().fold(0, |sum, stone_number| sum + (1 * stone_number));
