@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
   let mut hiking_map = transform_data(data);
