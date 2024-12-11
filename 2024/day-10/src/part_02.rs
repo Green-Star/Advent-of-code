@@ -19,7 +19,7 @@ fn transform_data(data: Vec<String>) -> HikingMap {
   for i in 0..data.len() {
     let mut line = vec![];
     for c in data[i].chars() {
-      line.push(Topographic { level: c.to_digit(10).unwrap_or(11), trails: HashSet::new() });
+      line.push(Topographic { level: c.to_digit(10).unwrap_or(11), trails: vec![] });
     }
     result.push(line);
   }
@@ -31,7 +31,7 @@ fn transform_data(data: Vec<String>) -> HikingMap {
 #[derive(Debug, Clone)]
 struct Topographic {
   level: u32,
-  trails: HashSet<(usize, usize)>,
+  trails: Vec<(usize, usize)>,
 }
 impl Topographic {
   fn get_score(&self) -> usize {
@@ -54,7 +54,7 @@ impl HikingMap {
     }
   }
   fn follow_one_hiking_trail(&mut self, start_index: (usize, usize)) {
-    self.map[start_index.0][start_index.1].trails.insert(start_index);
+    self.map[start_index.0][start_index.1].trails.push(start_index);
 
     /* Explore the 4 next indexes (North / West / East / South) */
     self.explore_one_hiking_trail((start_index.0.checked_add_signed(-1), start_index.1.checked_add_signed(0)), self.map[start_index.0][start_index.1].level, start_index);
@@ -83,11 +83,9 @@ impl HikingMap {
     if level != (previous_slope - 1) { return }
 
     /* We're on the trail to `top_index`!, store it in our reachable trails */
-    let have_not_been_explored = self.map[x][y].trails.insert(top_index);
-    /* If we somehow were on another trail to `top_index`, let's just here -> there's nothing more to do on this tail as it was already explored */
-    if have_not_been_explored == false { return }
+    self.map[x][y].trails.push(top_index);
 
-    /* One quicke check: if we're at ground level, there's nothing more to explore, so we'll stop here */
+    /* One quick check: if we're at ground level, there's nothing more to explore, so we'll stop here */
     if self.map[x][y].level == 0 { return }
 
     /* Otherwise, let's keep on following our trail path */

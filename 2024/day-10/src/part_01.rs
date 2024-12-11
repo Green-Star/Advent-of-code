@@ -87,7 +87,7 @@ impl HikingMap {
     /* If we somehow were on another trail to `top_index`, let's just here -> there's nothing more to do on this tail as it was already explored */
     if have_not_been_explored == false { return }
 
-    /* One quicke check: if we're at ground level, there's nothing more to explore, so we'll stop here */
+    /* One quick check: if we're at ground level, there's nothing more to explore, so we'll stop here */
     if self.map[x][y].level == 0 { return }
 
     /* Otherwise, let's keep on following our trail path */
