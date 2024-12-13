@@ -1,8 +1,6 @@
-use std::path::PrefixComponent;
-
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
-  let (mut map, empty_map) = transform_data(data);
+  let (map, empty_map) = transform_data(data);
 
   let final_result = do_stuff(map, &empty_map);
 
@@ -30,8 +28,6 @@ fn transform_data(data: Vec<String>) -> (Vec<Vec<Plot>>, Vec<Vec<Plot>>) {
 fn do_stuff(mut map: Vec<Vec<Plot>>, empty_map: &Vec<Vec<Plot>>) -> u32 {
   let mut sum = 0;
 
-  print_map(&map);
-
   for i in 0..map.len() {
     for j in 0..map[i].len() {
       match map[i][j].type_of {
@@ -39,9 +35,7 @@ fn do_stuff(mut map: Vec<Vec<Plot>>, empty_map: &Vec<Vec<Plot>>) -> u32 {
         Some(_) => {
           let mut extract_map = empty_map.clone();
           let (area, perimeter) = explore_area(&mut map, (i, j), &mut extract_map);
-          sum += (area * perimeter);
-          print_map(&map);
-          println!("Price: {sum}");
+          sum += area * perimeter;
         }
       }
     }
