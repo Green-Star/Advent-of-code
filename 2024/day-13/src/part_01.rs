@@ -12,7 +12,6 @@ fn transform_data(data: Vec<String>) -> Vec<(Position, Position, Position)> {
 
   let mut a_offset = Position { x: 0, y: 0};
   let mut b_offset = Position { x: 0, y: 0};
-  let mut prize_position = Position { x: 0, y: 0};
 
   for line in data {
     if line.is_empty() { continue }
@@ -28,7 +27,7 @@ fn transform_data(data: Vec<String>) -> Vec<(Position, Position, Position)> {
       let mut sub = s.last().unwrap().split(", ");
       let (x, y) = (sub.next().unwrap(), sub.last().unwrap());
       let (x, y) = (x.split("=").last().unwrap().parse().unwrap(), y.split("=").last().unwrap().parse().unwrap());
-      prize_position = Position { x, y };
+      let prize_position = Position { x, y };
 
       result.push((a_offset, b_offset, prize_position));
     }
@@ -77,14 +76,14 @@ So, the solution is:
   y = ((X+94) * 5400 - 8400 * (Y+34)) / ((X+94 * Y+67) - (X+22 * Y+34))
 */
 fn resolve_system(a_offset: Position, b_offest: Position, prize_position: Position) -> Option<(i32, i32)> {
-    let A = ((prize_position.x * b_offest.y) - (b_offest.x * prize_position.y)) / ((a_offset.x * b_offest.y) - (b_offest.x * a_offset.y));
-    let B = ((a_offset.x * prize_position.y) - (prize_position.x * a_offset.y)) / ((a_offset.x * b_offest.y) - (b_offest.x * a_offset.y));
+    let a = ((prize_position.x * b_offest.y) - (b_offest.x * prize_position.y)) / ((a_offset.x * b_offest.y) - (b_offest.x * a_offset.y));
+    let b = ((a_offset.x * prize_position.y) - (prize_position.x * a_offset.y)) / ((a_offset.x * b_offest.y) - (b_offest.x * a_offset.y));
 
-    let x_position = A * a_offset.x + B * b_offest.x;
-    let y_position = A * a_offset.y + B * b_offest.y;
+    let x_position = a * a_offset.x + b * b_offest.x;
+    let y_position = a * a_offset.y + b * b_offest.y;
 
     if (x_position, y_position) == (prize_position.x, prize_position.y) {
-      Some((A, B))
+      Some((a, b))
     } else {
       None
     }
