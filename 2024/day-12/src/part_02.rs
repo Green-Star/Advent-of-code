@@ -1,5 +1,3 @@
-use std::cell;
-
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
   let (map, empty_map) = transform_data(data);
@@ -17,8 +15,8 @@ fn transform_data(data: Vec<String>) -> (Vec<Vec<Plot>>, Vec<Vec<Plot>>) {
     let mut line = vec![];
     let mut empty_line = vec![];
     for c in s.chars() {
-      line.push(Plot { type_of: Some(c), connections: vec![] });
-      empty_line.push(Plot { type_of: None, connections: vec![] });
+      line.push(Plot { type_of: Some(c) });
+      empty_line.push(Plot { type_of: None });
     }
     empty.push(empty_line);
     result.push(line);
@@ -209,86 +207,7 @@ fn is_fence_needed(map: &mut Vec<Vec<Plot>>, position: &(usize, usize), offset: 
   }
 }
 
-
-
-
-fn find_connections(map: &mut Vec<Vec<Plot>>) {
-  for i in 0..map.len() {
-    for j in 0..map.len() {
-      match map[i][j].type_of {
-        Some(_) => connect_cells(map, &(i, j)),
-        None => {},
-      }
-    }
-  }
-}
-fn connect_cells(map: &mut Vec<Vec<Plot>>, position: &(usize, usize)) {
-  connect_east(map, position, (position.0, position.1 + 1));
-  connect_south(map, position, (position.0 + 1, position.1));
-}
-fn connect_east(map: &mut Vec<Vec<Plot>>, position: &(usize, usize), east_index: (usize, usize)) {
-  if east_index.0 >= map.len() { return }
-  if east_index.1 >= map[east_index.0].len() { return }
-
-  if let Some(_) = map[east_index.0][east_index.1].type_of {
-    if map[east_index.0][east_index.1].type_of == map[position.0][position.1].type_of {
-      map[position.0][position.1].connections.push(Direction::East);
-      map[east_index.0][east_index.1].connections.push(Direction::West);
-    }
-  }
-}
-fn connect_south(map: &mut Vec<Vec<Plot>>, position: &(usize, usize), south_index: (usize, usize)) {
-  if south_index.0 >= map.len() { return }
-  if south_index.1 >= map[south_index.0].len() { return }
-
-  if let Some(_) = map[south_index.0][south_index.1].type_of {
-    if map[south_index.0][south_index.1].type_of == map[position.0][position.1].type_of {
-      map[position.0][position.1].connections.push(Direction::South);
-      map[south_index.0][south_index.1].connections.push(Direction::North);
-    }
-  }
-}
-
-fn get_area_value(map: &Vec<Vec<Plot>>) -> (u32, u32) {
-  let mut area = 0;
-  let mut perimeter = 0;
-
-  for i in 0..map.len() {
-    for j in 0..map[i].len() {
-      if let Some(_) = map[i][j].type_of {
-        area += 1;
-        perimeter += (4 - map[i][j].connections.len()) as u32;
-      }
-    }
-  }
-
-  (area, perimeter)
-}
-
-
-#[derive(Debug, Copy, Clone)]
-enum Direction {
-  North,
-  East,
-  South,
-  West,
-}
-
 #[derive(Debug, Clone)]
 struct Plot {
   type_of: Option<char>,
-  connections: Vec<Direction>,
 }
-fn print_map(map: &Vec<Vec<Plot>>) {
-  println!("***");
-  for l in map {
-    for p in l {
-      match p.type_of {
-        Some(x) => print!("[{x}]"),
-        None => print!("[ ]"),
-      }
-    }
-    println!();
-  }
-}
-

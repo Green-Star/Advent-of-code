@@ -151,16 +151,3 @@ struct Plot {
   type_of: Option<char>,
   connections: Vec<Direction>,
 }
-fn print_map(map: &Vec<Vec<Plot>>) {
-  println!("***");
-  for l in map {
-    for p in l {
-      match p.type_of {
-        Some(x) => print!("[{x}]"),
-        None => print!("[ ]"),
-      }
-    }
-    println!();
-  }
-}
-
