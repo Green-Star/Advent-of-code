@@ -28,7 +28,7 @@ fn transform_data(data: Vec<String>) -> (Vec<Vec<Plot>>, Vec<Vec<Plot>>) {
 }
 
 fn do_stuff(mut map: Vec<Vec<Plot>>, empty_map: &Vec<Vec<Plot>>) -> u32 {
-  let mut areas_sum = 0;
+  let mut sum = 0;
 
   print_map(&map);
 
@@ -38,15 +38,16 @@ fn do_stuff(mut map: Vec<Vec<Plot>>, empty_map: &Vec<Vec<Plot>>) -> u32 {
         None => {},
         Some(_) => {
           let mut extract_map = empty_map.clone();
-          areas_sum += explore_area(&mut map, (i, j), &mut extract_map);
+          let (area, perimeter) = explore_area(&mut map, (i, j), &mut extract_map);
+          sum += (area * perimeter);
           print_map(&map);
-          print_map(&extract_map);
+          println!("Price: {sum}");
         }
       }
     }
   }
 
-  areas_sum
+  sum
 }
 
 fn move_cell_at_position(src: &mut Vec<Vec<Plot>>, position: &(usize, usize), dst: &mut Vec<Vec<Plot>>) {
@@ -54,11 +55,13 @@ fn move_cell_at_position(src: &mut Vec<Vec<Plot>>, position: &(usize, usize), ds
   src[position.0][position.1].type_of = None;
 }
 
-fn explore_area(origin: &mut Vec<Vec<Plot>>, position: (usize, usize), empty_map: &mut Vec<Vec<Plot>>) -> u32 {
+fn explore_area(origin: &mut Vec<Vec<Plot>>, position: (usize, usize), empty_map: &mut Vec<Vec<Plot>>) -> (u32, u32) {
   move_cell_at_position(origin, &position, empty_map);
   move_area(origin, position, empty_map, &position);
 
-  0
+  find_connections(empty_map);
+
+  get_area_value(empty_map)
 }
 
 fn move_area(origin: &mut Vec<Vec<Plot>>, position: (usize, usize), empty_map: &mut Vec<Vec<Plot>>, ref_index: &(usize, usize)) {
@@ -85,6 +88,59 @@ fn move_cells_in_area(origin: &mut Vec<Vec<Plot>>, position: (Option<usize>, Opt
 
   move_cell_at_position(origin, &(x, y), empty_map);
   move_area(origin, (x, y), empty_map, ref_index);
+}
+
+fn find_connections(map: &mut Vec<Vec<Plot>>) {
+  for i in 0..map.len() {
+    for j in 0..map.len() {
+      match map[i][j].type_of {
+        Some(_) => connect_cells(map, &(i, j)),
+        None => {},
+      }
+    }
+  }
+}
+fn connect_cells(map: &mut Vec<Vec<Plot>>, position: &(usize, usize)) {
+  connect_east(map, position, (position.0, position.1 + 1));
+  connect_south(map, position, (position.0 + 1, position.1));
+}
+fn connect_east(map: &mut Vec<Vec<Plot>>, position: &(usize, usize), east_index: (usize, usize)) {
+  if east_index.0 >= map.len() { return }
+  if east_index.1 >= map[east_index.0].len() { return }
+
+  if let Some(_) = map[east_index.0][east_index.1].type_of {
+    if map[east_index.0][east_index.1].type_of == map[position.0][position.1].type_of {
+      map[position.0][position.1].connections.push(Direction::East);
+      map[east_index.0][east_index.1].connections.push(Direction::West);
+    }
+  }
+}
+fn connect_south(map: &mut Vec<Vec<Plot>>, position: &(usize, usize), south_index: (usize, usize)) {
+  if south_index.0 >= map.len() { return }
+  if south_index.1 >= map[south_index.0].len() { return }
+
+  if let Some(_) = map[south_index.0][south_index.1].type_of {
+    if map[south_index.0][south_index.1].type_of == map[position.0][position.1].type_of {
+      map[position.0][position.1].connections.push(Direction::South);
+      map[south_index.0][south_index.1].connections.push(Direction::North);
+    }
+  }
+}
+
+fn get_area_value(map: &Vec<Vec<Plot>>) -> (u32, u32) {
+  let mut area = 0;
+  let mut perimeter = 0;
+
+  for i in 0..map.len() {
+    for j in 0..map[i].len() {
+      if let Some(_) = map[i][j].type_of {
+        area += 1;
+        perimeter += (4 - map[i][j].connections.len()) as u32;
+      }
+    }
+  }
+
+  (area, perimeter)
 }
 
 
