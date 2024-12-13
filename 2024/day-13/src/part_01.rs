@@ -1,19 +1,53 @@
 pub fn resolve(input_data_path: &str) {
-    // let data = crate::core::load_file_in_memory(input_data_path).unwrap();
-    // let (map, empty_map) = transform_data(data);
+    let data = crate::core::load_file_in_memory(input_data_path).unwrap();
+    let systems = transform_data(data);
 
-    // let final_result = do_stuff(map, &empty_map);
+    let final_result: i32 = systems.iter().map(|s| resolve_system(s.0, s.1, s.2)).map(|o| get_token_cost(o)).sum();
 
-    // println!("Part 1 final result: {}", final_result);
+    println!("Part 1 final result: {}", final_result);
+}
 
-  println!("{:?}", resolve_system(Position {x: 94, y: 34}, Position {x: 22, y: 67}, Position {x:8400, y:5400}));
+fn transform_data(data: Vec<String>) -> Vec<(Position, Position, Position)> {
+  let mut result = vec![];
 
-  println!("{:?}", resolve_system(Position {x: 26, y: 66}, Position {x: 67, y: 21}, Position {x:12748, y:12176}));
+  let mut a_offset = Position { x: 0, y: 0};
+  let mut b_offset = Position { x: 0, y: 0};
+  let mut prize_position = Position { x: 0, y: 0};
 
-  println!("{:?}", resolve_system(Position {x: 17, y: 86}, Position {x: 84, y: 37}, Position {x:7870, y:6450}));
+  for line in data {
+    if line.is_empty() { continue }
 
-  println!("{:?}", resolve_system(Position {x: 69, y: 23}, Position {x: 27, y: 71}, Position {x:18641, y:10279}));
+    if line.starts_with("Button A:") {
+      let (x_offset, y_offset) = parse_button_description(&line);
+      a_offset = Position { x: x_offset, y: y_offset };
+    } else if line.starts_with("Button B:") {
+      let (x_offset, y_offset) = parse_button_description(&line);
+      b_offset = Position { x: x_offset, y: y_offset };
+    } else if line.starts_with("Prize:") {
+      let s = line.split(": ");
+      let mut sub = s.last().unwrap().split(", ");
+      let (x, y) = (sub.next().unwrap(), sub.last().unwrap());
+      let (x, y) = (x.split("=").last().unwrap().parse().unwrap(), y.split("=").last().unwrap().parse().unwrap());
+      prize_position = Position { x, y };
 
+      result.push((a_offset, b_offset, prize_position));
+    }
+  }
+
+  result
+}
+
+fn parse_button_description(line: &str) -> (i32, i32) {
+  let s = line.split(": ");
+  let mut sub = s.last().unwrap().split(", ");
+  let (x, y) = (sub.next().unwrap(), sub.last().unwrap());
+  (parse_offset(x), parse_offset(y))
+}
+
+fn parse_offset(offset: &str) -> i32 {
+  let s = offset.split("+");
+
+  s.last().unwrap().parse().unwrap()
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -42,7 +76,7 @@ So, the solution is:
   x = (8400*(Y+67) - (X*22)*5400) / (X+94 * Y+67) - (X+22 * Y+34)
   y = ((X+94) * 5400 - 8400 * (Y+34)) / ((X+94 * Y+67) - (X+22 * Y+34))
 */
-pub fn resolve_system(a_offset: Position, b_offest: Position, prize_position: Position) -> Option<(i32, i32)> {
+fn resolve_system(a_offset: Position, b_offest: Position, prize_position: Position) -> Option<(i32, i32)> {
     let A = ((prize_position.x * b_offest.y) - (b_offest.x * prize_position.y)) / ((a_offset.x * b_offest.y) - (b_offest.x * a_offset.y));
     let B = ((a_offset.x * prize_position.y) - (prize_position.x * a_offset.y)) / ((a_offset.x * b_offest.y) - (b_offest.x * a_offset.y));
 
@@ -54,4 +88,11 @@ pub fn resolve_system(a_offset: Position, b_offest: Position, prize_position: Po
     } else {
       None
     }
+}
+
+fn get_token_cost(times: Option<(i32, i32)>) -> i32 {
+  match times {
+    Some((a, b)) => a * 3 + b,
+    None => 0
+  }
 }
