@@ -36,8 +36,8 @@ fn do_stuff(mut map: Vec<Vec<Plot>>, empty_map: &Vec<Vec<Plot>>) -> u32 {
         None => {},
         Some(_) => {
           let mut extract_map = empty_map.clone();
-          let (area, perimeter) = explore_area(&mut map, (i, j), &mut extract_map);
-          sum += area * perimeter;
+          let (area, fences) = explore_area(&mut map, (i, j), &mut extract_map);
+          sum += area * fences;
         }
       }
     }
@@ -55,18 +55,9 @@ fn explore_area(origin: &mut Vec<Vec<Plot>>, position: (usize, usize), empty_map
   move_cell_at_position(origin, &position, empty_map);
   move_area(origin, position, empty_map, &position);
 
-  print_map(&empty_map);
-
   let (cells, top_fences, sided_fences) = find_fences(empty_map);
-  println!("Total nothr fences: {top_fences}");
-  println!("Total east fences: {sided_fences}");
-  println!("Total cells: {cells}");
-  println!("Total value for area: {}", cells * (top_fences + sided_fences));
-  // let area = nb_cells_in_area(empty_map);
-  // area * (fences * 4)
 
-//  get_area_value(empty_map)
-(0, 1)
+  (cells, top_fences + sided_fences)
 }
 
 fn move_area(origin: &mut Vec<Vec<Plot>>, position: (usize, usize), empty_map: &mut Vec<Vec<Plot>>, ref_index: &(usize, usize)) {
