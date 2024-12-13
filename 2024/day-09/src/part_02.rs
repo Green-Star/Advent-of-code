@@ -49,13 +49,104 @@ fn compact_files(filesystem: &Vec<Option<i32>>) -> Vec<Option<i32>> {
   let mut slice_start_index = 0;
   let mut end_slice_index = output.len();
 
+  let mut iter = 0;
+
   loop {
-    println!("{:?}", output);
+      match find_next_block_to_move(&output, end_slice_index) {
+        None => break,
+        Some((block_index, block_length)) => {
+          iter += 1;
+          match find_next_free_chunk(&output, slice_start_index, end_slice_index, block_length) {
+            None => { println!("Can't move! - {iter}"); },
+            Some(chunk_index) => {
+              for i in 0..block_length {
+                output[chunk_index + i] = output[block_index + i];
+                output[block_index + i] = None;
+              }
+            }
+          }
+          end_slice_index = block_index + 1;
+          if slice_start_index >= end_slice_index { break }
+        }
+      }
+  }
+
+  output
+}
+
+fn find_next_free_block(filesystem: &Vec<Option<i32>>, start_index: usize, end_index: usize) -> Option<usize> {
+  for i in start_index..=end_index {
+    match filesystem[i] {
+      None => { return Some(i); },
+      Some(_) => {}
+    }
+  }
+  None
+}
+fn find_next_free_chunk(filesystem: &Vec<Option<i32>>, start_index: usize, end_index: usize, block_length: usize) -> Option<usize> {
+  let mut length = 0;
+  for i in start_index..=end_index {
+    match filesystem[i] {
+      None => {
+        length = 0;
+        for j in i..=end_index {
+          match filesystem[j] {
+            None => {
+              length += 1;
+              if length == block_length { return Some(i); }
+            }
+            Some(_) => { break; }
+          }
+        }
+      },
+      Some(_) => {}
+    }
+  }
+  None
+}
+fn find_next_block_to_move(filesystem: &Vec<Option<i32>>, start_index: usize) -> Option<(usize, usize)> {
+  let mut block_index = None;
+
+  for i in (0..start_index).rev() {
+    match filesystem[i] {
+        None => {},
+        Some(_) => {
+          block_index = Some(i);
+          break;
+        }
+    }
+  }
+  if block_index == None { return None; }
+
+  let end_index = block_index.unwrap();
+  let mut start_index = end_index;
+
+  for i in (0..=end_index).rev() {
+    match filesystem[i] {
+      None => break,
+      Some(_) => {
+        if filesystem[i] != filesystem[end_index] { break }
+        start_index = i;
+      }
+    }
+  }
+
+  Some((start_index, end_index - start_index + 1))
+}
+
+/*
+fn compact_files(filesystem: &Vec<Option<i32>>) -> Vec<Option<i32>> {
+  let mut output = filesystem.clone();
+  let mut slice_start_index = 0;
+  let mut end_slice_index = output.len();
+
+  loop {
       match find_next_block_to_move(&output[slice_start_index..end_slice_index]) {
         None => break,
         Some((block_index, block_length)) => {
+          println!("Trying to move {:?}", output[block_index]);
           match find_next_free_chunk(&output[slice_start_index..block_index], block_length) {
-            None => {},
+            None => { println!("Can't move!"); },
             Some(chunk_index) => {
               for i in 0..block_length {
                 output[slice_start_index + chunk_index + i] = output[block_index + i];
@@ -67,14 +158,19 @@ fn compact_files(filesystem: &Vec<Option<i32>>) -> Vec<Option<i32>> {
               }
             }
           }
+          println!("Searching in: {:?}", &output[slice_start_index..end_slice_index]);
+          println!("block index {:?}", block_index);
           end_slice_index = block_index;
+          println!("Searching in: {:?}", &output[slice_start_index..end_slice_index]);
         }
       }
   }
 
   output
 }
+  */
 
+  /*
 fn find_next_block_to_move(filesystem: &[Option<i32>]) -> Option<(usize, usize)> {
   let mut block_index = None;
 
@@ -104,6 +200,8 @@ fn find_next_block_to_move(filesystem: &[Option<i32>]) -> Option<(usize, usize)>
 
   Some((start_index, end_index - start_index + 1))
 }
+  */
+  /***
 fn find_next_free_chunk(filesystem: &[Option<i32>], chunk_length: usize) -> Option<usize> {
   let mut sliced_index = 0;
 
@@ -115,7 +213,8 @@ fn find_next_free_chunk(filesystem: &[Option<i32>], chunk_length: usize) -> Opti
         let free_index = sliced_index + offset_free_index;
 
         let mut free_length = 0;
-        for i in free_index .. filesystem.len() {
+        for i in free_index ..= filesystem.len() {
+          if i == filesystem.len() { return None }
           match filesystem[i] {
             Some(_) => {
               sliced_index = i;
@@ -127,7 +226,6 @@ fn find_next_free_chunk(filesystem: &[Option<i32>], chunk_length: usize) -> Opti
             }
           }
         }
-        sliced_index += 1;
       }
     }
   }
@@ -137,7 +235,7 @@ fn find_next_free_chunk(filesystem: &[Option<i32>], chunk_length: usize) -> Opti
 fn find_next_free_block(filesystem: &[Option<i32>]) -> Option<usize> {
   filesystem.iter().position(|b| b == &None)
 }
-
+***/
 /*
 
 
