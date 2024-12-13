@@ -37,9 +37,9 @@ fn transform_data(data: Vec<String>) -> (Vec<Vec<CityLocation>>, Vec<Antenna>) {
     for c in data[i].chars() {
       if c.is_digit(36) {
         antennas.push(Antenna { frequency: c, position: (i, j) });
-        chars.push(CityLocation { c, antinode: Some(1) }); // There's always at least 3 antennas for each frequency, so each antenna is itself an antinode (since it it aligned with at least two other antennas on its frequency)
+        chars.push(CityLocation { antinode: Some(1) }); // There's always at least 3 antennas for each frequency, so each antenna is itself an antinode (since it it aligned with at least two other antennas on its frequency)
       } else {
-        chars.push(CityLocation { c, antinode: None });
+        chars.push(CityLocation { antinode: None });
       }
       j += 1;
     }
@@ -110,44 +110,10 @@ fn compute_antinode(city: &Vec<Vec<CityLocation>>, paired_antennas: (Antenna, An
     }
   }
 
-  /*
-  println!("({:?} - {:?}) -> ({:?}, {:?})", a, b, offset_a, offset_b);
-
-  let mut first_antinode_position = (a.position.0.checked_add_signed(offset_a.0), a.position.1.checked_add_signed(offset_a.1));
-  match first_antinode_position {
-      (Some(x), Some(y)) => {
-        if x >= city.len() { first_antinode_position.0 = None }
-        else if y >= city[x].len() { first_antinode_position.1 = None }
-      },
-      _ => {},
-  }
-  let mut second_antinode_position = (b.position.0.checked_add_signed(offset_b.0), b.position.1.checked_add_signed(offset_b.1));
-  match second_antinode_position {
-      (Some(x), Some(y)) => {
-        if x >= city.len() { second_antinode_position.0 = None }
-        else if y >= city[x].len() { second_antinode_position.1 = None }
-      },
-      _ => {},
-  }
-
-  let a_antinode_position;
-  match first_antinode_position {
-      (Some(x), Some(y)) => a_antinode_position = Some((x, y)),
-      _ => a_antinode_position = None
-  }
-  let b_antinode_position;
-  match second_antinode_position {
-      (Some(x), Some(y)) => b_antinode_position = Some((x, y)),
-      _ => b_antinode_position = None
-  }
-
-  (a_antinode_position, b_antinode_position)
-  */
   result
 }
 
 #[derive(Debug, Copy, Clone)]
 struct CityLocation {
-  c: char,
   antinode: Option<i32>,
 }

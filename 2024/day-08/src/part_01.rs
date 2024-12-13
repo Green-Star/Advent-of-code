@@ -47,7 +47,7 @@ fn transform_data(data: Vec<String>) -> (Vec<Vec<CityLocation>>, Vec<Antenna>) {
         antennas.push(Antenna { frequency: c, position: (i, j) });
       }
       j += 1;
-      chars.push(CityLocation { c, antinode: None });
+      chars.push(CityLocation { antinode: None });
     }
     city.push(chars);
   }
@@ -123,6 +123,5 @@ fn compute_antinode(city: &Vec<Vec<CityLocation>>, paired_antennas: (Antenna, An
 
 #[derive(Debug, Copy, Clone)]
 struct CityLocation {
-  c: char,
   antinode: Option<i32>,
 }
