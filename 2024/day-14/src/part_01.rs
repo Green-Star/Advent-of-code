@@ -2,7 +2,7 @@ use std::{collections::HashMap};
 
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
-  let map_size = (11, 7);
+  let map_size = (101, 103);
   let seconds = 100;
   let robots = transform_data(data);
 /*
