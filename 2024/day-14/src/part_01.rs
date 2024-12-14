@@ -1,11 +1,11 @@
-use std::collections::HashMap;
+use std::{collections::HashMap};
 
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
   let map_size = (11, 7);
   let seconds = 100;
   let robots = transform_data(data);
-
+/*
   let map = build_robot_map(&robots);
   for j in 0..7 {
     for i in 0..11 {
@@ -17,9 +17,10 @@ pub fn resolve(input_data_path: &str) {
     println!("");
   }
   println!("***");
-
+*/
   let robots = robots.iter().map(|r| Robot { start_position: r.start_position, velocity: r.velocity, end_position: get_coordinates(r, map_size, seconds) }).collect();
   let map = build_robot_map(&robots);
+/*
   for j in 0..7 {
     for i in 0..11 {
       match map.get(&(i, j)) {
@@ -30,8 +31,12 @@ pub fn resolve(input_data_path: &str) {
     println!("");
   }
   println!("***");
+  */
 
-  let final_result = 0;
+  let (north_west, north_east, south_west, south_east) = split_robot_map_in_quadrant(map, map_size);
+  println!("({}, {}, {}, {})", north_west, north_east, south_west, south_east);
+
+  let final_result = north_west * north_east * south_west * south_east;
 
   println!("Part 1 final result: {}", final_result);
 }
@@ -75,6 +80,50 @@ fn build_robot_map(robots: &Vec<Robot>) -> HashMap<(i32, i32), i32> {
   }
 
   map
+}
+fn split_robot_map_in_quadrant(robot_map: HashMap<(i32, i32), i32>, map_size: (i32, i32)) -> (i32, i32, i32, i32) {
+  let mut north_west = 0;
+  let mut north_east = 0;
+  let mut south_west = 0;
+  let mut south_east = 0;
+
+  let split_x = map_size.0 / 2;
+  let split_y = map_size.1 / 2;
+
+  for i in 0..split_x {
+    for j in 0..split_y {
+      match robot_map.get(&(i, j)) {
+        Some(number) => north_west += number,
+        None => {},
+      }
+    }
+  }
+  for i in split_x + 1..map_size.0 {
+    for j in 0..split_y {
+      match robot_map.get(&(i, j)) {
+        Some(number) => north_east += number,
+        None => {},
+      }
+    }
+  }
+  for i in 0..split_x {
+    for j in split_y + 1..map_size.1 {
+      match robot_map.get(&(i, j)) {
+        Some(number) => south_west += number,
+        None => {},
+      }
+    }
+  }
+  for i in split_x + 1..map_size.0 {
+    for j in split_y + 1..map_size.1 {
+      match robot_map.get(&(i, j)) {
+        Some(number) => south_east += number,
+        None => {},
+      }
+    }
+  }
+
+  (north_west, north_east, south_west, south_east)
 }
 
 #[derive(Debug, Copy, Clone)]
