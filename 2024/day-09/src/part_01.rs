@@ -1,12 +1,9 @@
-use std::{ops::Index, result};
-
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
   let transformed_data = transform_data(data);
   println!("{:?}", transformed_data);
-  println!("*****");
   let transformed_filesystem = compact_files(&transformed_data);
-  println!("{:?}", transformed_filesystem);
+  println!("***** Finished! *****");
 
   let final_result = checksum(&transformed_filesystem);
 
