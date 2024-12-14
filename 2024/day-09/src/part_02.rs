@@ -55,7 +55,6 @@ fn compact_files(filesystem: &Vec<Option<i32>>) -> Vec<Option<i32>> {
       None => break,
       Some((block_index, block_length)) => {
         println!("Found block @{} -> {} cases", block_index, block_length);
-        // < block_index, obligatoirement (block_index c'est le block (quique dans le fond, on s'en fout))
         match find_free_chunk(&output, block_index, block_length) {
           Some(destination_index) => {
             println!("Move to {destination_index}");
@@ -66,7 +65,7 @@ fn compact_files(filesystem: &Vec<Option<i32>>) -> Vec<Option<i32>> {
           },
           None => {},
         }
-        println!("{:?}", output);
+//        println!("{:?}", output);
         match block_index.checked_add_signed(-1) {
           None => break,
           Some(next_index) => last_read_index = next_index,
