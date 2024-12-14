@@ -6,6 +6,7 @@ pub fn resolve(input_data_path: &str) {
   println!("{:?}", transformed_data);
   println!("*****");
   let transformed_filesystem = compact_files(&transformed_data);
+  println!("finished!");
   println!("{:?}", transformed_filesystem);
 
   let final_result = checksum(&transformed_filesystem);
@@ -46,34 +47,97 @@ fn transform_data(data: Vec<String>) -> Vec<Option<i32>> {
 
 fn compact_files(filesystem: &Vec<Option<i32>>) -> Vec<Option<i32>> {
   let mut output = filesystem.clone();
-  let mut slice_start_index = 0;
-  let mut end_slice_index = output.len();
+  let mut last_read_index = output.len()-1;
 
-  let mut iter = 0;
-
+  let mut i = 0;
   loop {
-      match find_next_block_to_move(&output, end_slice_index) {
-        None => break,
-        Some((block_index, block_length)) => {
-          iter += 1;
-          match find_next_free_chunk(&output, slice_start_index, end_slice_index, block_length) {
-            None => { println!("Can't move! - {iter}"); },
-            Some(chunk_index) => {
-              for i in 0..block_length {
-                output[chunk_index + i] = output[block_index + i];
-                output[block_index + i] = None;
-              }
+    match find_next_block_to_move(&output, last_read_index) {
+      None => break,
+      Some((block_index, block_length)) => {
+        println!("Found block @{} -> {} cases", block_index, block_length);
+        // < block_index, obligatoirement (block_index c'est le block (quique dans le fond, on s'en fout))
+        match find_free_chunk(&output, block_index, block_length) {
+          Some(destination_index) => {
+            println!("Move to {destination_index}");
+            for i in 0..block_length {
+              output[destination_index + i] = output[block_index + i];
+              output[block_index + i] = None;
             }
-          }
-          end_slice_index = block_index + 1;
-          if slice_start_index >= end_slice_index { break }
+          },
+          None => {},
+        }
+        println!("{:?}", output);
+        match block_index.checked_add_signed(-1) {
+          None => break,
+          Some(next_index) => last_read_index = next_index,
         }
       }
+    }
   }
 
   output
 }
 
+fn find_next_block_to_move(filesystem: &Vec<Option<i32>>, end_index: usize) -> Option<(usize, usize)> {
+  let mut end_block_index = 0;
+  let mut file_id = None;
+
+  for i in (0..=end_index).rev() {
+    match filesystem[i] {
+      None => {},
+      Some(file) => {
+        end_block_index = i;
+        file_id = Some(file);
+        break;
+      }
+    }
+  }
+  if file_id == None { return None }
+
+  let mut start_block_index = end_block_index;
+  for i in (0..end_block_index).rev() {
+    match filesystem[i] {
+      Some(x) => {
+        if Some(x) == file_id {
+          start_block_index = i;
+        } else {
+          break;
+        }
+      },
+      None => break,
+    }
+  }
+
+  Some((start_block_index, end_block_index - start_block_index + 1))
+}
+fn find_free_chunk(filesystem: &Vec<Option<i32>>, block_index: usize, block_length: usize) -> Option<usize> {
+  let mut read_index = 0;
+  while read_index < block_index {
+    match filesystem[read_index] {
+      Some(_) => { read_index += 1 },
+      None => {
+//        println!("{read_index} - {:?}", filesystem[read_index]);
+        let mut chunk_length = 0;
+        let mut i = 0;
+
+        while read_index+i < block_index {
+          match filesystem[read_index+i] {
+            Some(_) => { break; },
+            None => {
+              chunk_length += 1;
+              if chunk_length == block_length { return Some(read_index); }
+              i += 1
+            }
+          }
+        }
+        read_index = read_index+i+1;
+      }
+    }
+  }
+
+  None
+}
+/*
 fn find_next_free_block(filesystem: &Vec<Option<i32>>, start_index: usize, end_index: usize) -> Option<usize> {
   for i in start_index..=end_index {
     match filesystem[i] {
@@ -380,6 +444,7 @@ fn find_block_length(reversed_filesystem: &mut Rev<Enumerate<Iter<'_, Option<i32
     Some((index, option) =>
   }
 }
+  */
   */
   */
 
