@@ -1,37 +1,13 @@
-use std::{collections::HashMap};
+use std::collections::HashMap;
 
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
   let map_size = (101, 103);
   let seconds = 100;
   let robots = transform_data(data);
-/*
-  let map = build_robot_map(&robots);
-  for j in 0..7 {
-    for i in 0..11 {
-      match map.get(&(i, j)) {
-        Some(number) => print!("{number}"),
-        None => print!(".")
-      }
-    }
-    println!("");
-  }
-  println!("***");
-*/
+
   let robots = robots.iter().map(|r| Robot { start_position: r.start_position, velocity: r.velocity, end_position: get_coordinates(r, map_size, seconds) }).collect();
   let map = build_robot_map(&robots);
-/*
-  for j in 0..7 {
-    for i in 0..11 {
-      match map.get(&(i, j)) {
-        Some(number) => print!("{number}"),
-        None => print!(".")
-      }
-    }
-    println!("");
-  }
-  println!("***");
-  */
 
   let (north_west, north_east, south_west, south_east) = split_robot_map_in_quadrant(map, map_size);
   println!("({}, {}, {}, {})", north_west, north_east, south_west, south_east);
