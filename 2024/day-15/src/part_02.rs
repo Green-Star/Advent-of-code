@@ -4,46 +4,10 @@ pub fn resolve(input_data_path: &str) {
 
   warehouse.print();
   println!("*****");
-  /*
   for d in directions {
     warehouse.do_move(d);
-    }
-    warehouse.print();
-    */
-    warehouse.do_move(Direction::West);
-    warehouse.print();
-    println!("*****");
-    warehouse.do_move(Direction::South);
-    warehouse.print();
-    println!("*****");
-    warehouse.do_move(Direction::South);
-    warehouse.print();
-    println!("*****");
-    warehouse.do_move(Direction::West);
-    warehouse.print();
-    println!("*****");
-    warehouse.do_move(Direction::West);
-    warehouse.print();
-    println!("*****");
-    warehouse.do_move(Direction::North);
-    warehouse.print();
-    println!("*****");
-    warehouse.do_move(Direction::North);
-    warehouse.print();
-    println!("*****");
-    warehouse.do_move(Direction::West);
-    warehouse.print();
-    println!("*****");
-    warehouse.do_move(Direction::West);
-    warehouse.print();
-    println!("*****");
-    warehouse.do_move(Direction::North);
-    warehouse.print();
-    println!("*****");
-    warehouse.do_move(Direction::North);
-    warehouse.print();
-    println!("*****");
-
+  }
+  warehouse.print();
 
   let final_result = warehouse.gps();
 
@@ -172,8 +136,6 @@ impl Warehouse {
   fn shift_up_or_down(&mut self, index: (usize, usize), direction: (isize, isize)) -> bool {
     let next_index = (index.0.checked_add_signed(direction.0).unwrap(), index.1.checked_add_signed(direction.1).unwrap());
     let can_move = self.can_move_up_or_down(next_index, direction);
-
-    println!("Can move: {}", can_move);
 
     if can_move {
       self.do_shift_up_or_down(next_index, direction);
