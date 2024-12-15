@@ -10,7 +10,7 @@ pub fn resolve(input_data_path: &str) {
   }
   warehouse.print();
 
-  let final_result = 0;
+  let final_result = warehouse.gps();
 
   println!("Part 1 final result: {}", final_result);
 }
@@ -127,6 +127,21 @@ impl Warehouse {
         return can_move;
       }
     }
+  }
+
+  fn gps(&self) -> i32 {
+    let mut score = 0;
+
+    for i in 1..self.map.len() {
+      for j in 1..self.map[i].len() {
+        match self.map[i][j] {
+          Some(Content::Box) => { score += (i * 100 + j) as i32 },
+          _ => {},
+        }
+      }
+    }
+
+    score
   }
 
   fn print(&self) {
