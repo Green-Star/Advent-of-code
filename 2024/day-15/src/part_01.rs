@@ -1,111 +1,145 @@
-use std::collections::HashMap;
-
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
-  let map_size = (101, 103);
-  let seconds = 100;
-  let robots = transform_data(data);
+  let (mut warehouse, directions) = transform_data(data);
 
-  let robots = robots.iter().map(|r| Robot { start_position: r.start_position, velocity: r.velocity, end_position: get_coordinates(r, map_size, seconds) }).collect();
-  let map = build_robot_map(&robots);
+  warehouse.print();
+  println!("*****");
 
-  let (north_west, north_east, south_west, south_east) = split_robot_map_in_quadrant(map, map_size);
-  println!("({}, {}, {}, {})", north_west, north_east, south_west, south_east);
+  for d in directions {
+    warehouse.do_move(d);
+  }
+  warehouse.print();
 
-  let final_result = north_west * north_east * south_west * south_east;
+  let final_result = 0;
 
   println!("Part 1 final result: {}", final_result);
 }
 
-fn transform_data(data: Vec<String>) -> Vec<Robot> {
-  let mut result = vec![];
+fn transform_data(data: Vec<String>) -> (Warehouse, Vec<Direction>) {
+  let mut map = vec![];
+  let mut map_description = true;
+  let mut directions = vec![];
+  let mut robot_position = (0, 0);
+  let mut i = 0;
 
   for line in data {
-    let mut s = line.split(" ");
-    let (p, v) = (s.next().unwrap(), s.last().unwrap());
-    let position = extract_numbers(p);
-    let velocity = extract_numbers(v);
-    result.push(Robot { start_position: position, velocity, end_position: position });
-  }
+    if line.is_empty() { map_description = false; }
 
-  result
-}
-fn extract_numbers(chars: &str) -> (i32, i32) {
-  let number_list = chars.split("=").last().unwrap();
-  let mut numbers = number_list.split(",");
-  let (x, y) = (numbers.next().unwrap().parse().unwrap(), numbers.last().unwrap().parse().unwrap());
-
-  (x, y)
-}
-
-fn get_coordinates(robot: &Robot, map_size: (i32, i32), seconds: i32) -> (i32, i32) {
-  let i_x = (robot.start_position.0 + robot.velocity.0 * seconds) % map_size.0;
-  let i_y = (robot.start_position.1 + robot.velocity.1 * seconds) % map_size.1;
-
-  let x = { if i_x < 0 { map_size.0 + i_x } else { i_x } };
-  let y = { if i_y < 0 { map_size.1 + i_y } else { i_y } };
-
-  (x, y)
-}
-
-fn build_robot_map(robots: &Vec<Robot>) -> HashMap<(i32, i32), i32> {
-  let mut map = HashMap::new();
-
-  for r in robots {
-    map.entry(r.end_position).and_modify(|e| *e += 1).or_insert(1);
-  }
-
-  map
-}
-fn split_robot_map_in_quadrant(robot_map: HashMap<(i32, i32), i32>, map_size: (i32, i32)) -> (i32, i32, i32, i32) {
-  let mut north_west = 0;
-  let mut north_east = 0;
-  let mut south_west = 0;
-  let mut south_east = 0;
-
-  let split_x = map_size.0 / 2;
-  let split_y = map_size.1 / 2;
-
-  for i in 0..split_x {
-    for j in 0..split_y {
-      match robot_map.get(&(i, j)) {
-        Some(number) => north_west += number,
-        None => {},
+    if map_description {
+      let mut l = vec![];
+      let mut j = 0;
+      for c in line.chars() {
+        match c {
+          '#' => { l.push(Some(Content::Wall)) },
+          'O' => { l.push(Some(Content::Box)) },
+          '@' => { l.push(Some(Content::Robot)); robot_position = (i, j) },
+          _ => { l.push(None) },
+        }
+        j += 1;
       }
-    }
-  }
-  for i in split_x + 1..map_size.0 {
-    for j in 0..split_y {
-      match robot_map.get(&(i, j)) {
-        Some(number) => north_east += number,
-        None => {},
-      }
-    }
-  }
-  for i in 0..split_x {
-    for j in split_y + 1..map_size.1 {
-      match robot_map.get(&(i, j)) {
-        Some(number) => south_west += number,
-        None => {},
-      }
-    }
-  }
-  for i in split_x + 1..map_size.0 {
-    for j in split_y + 1..map_size.1 {
-      match robot_map.get(&(i, j)) {
-        Some(number) => south_east += number,
-        None => {},
+      map.push(l);
+      i += 1;
+    } else {
+      for c in line.chars() {
+        match c {
+          '^' => { directions.push(Direction::North) },
+          'v' => { directions.push(Direction::South) },
+          '<' => { directions.push(Direction::West) },
+          '>' => { directions.push(Direction::East) },
+          _ => {},
+        }
       }
     }
   }
 
-  (north_west, north_east, south_west, south_east)
+  (Warehouse { map, robot_position, last_failed_movement: None }, directions)
 }
 
-#[derive(Debug, Copy, Clone)]
-struct Robot {
-  start_position: (i32, i32),
-  velocity: (i32, i32),
-  end_position: (i32, i32),
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+enum Direction {
+  North,
+  East,
+  South,
+  West,
+}
+impl Direction {
+  fn offset(&self) -> (isize, isize) {
+    match self {
+      Self::North => { (-1, 0) },
+      Self::East => { (0, 1) },
+      Self::South => { (1, 0) },
+      Self::West => { (0, -1) },
+    }
+  }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
+enum Content {
+  Wall,
+  Box,
+  Robot,
+}
+
+#[derive(Debug, Clone)]
+struct Warehouse {
+  map: Vec<Vec<Option<Content>>>,
+  robot_position: (usize, usize),
+
+  last_failed_movement: Option<Direction>,
+}
+impl Warehouse {
+  fn do_move(&mut self, direction: Direction) {
+    match self.last_failed_movement {
+      Some(d) => if d == direction { return },
+      None => {},
+    }
+
+    let offset = direction.offset();
+
+    let moved = self.shift(self.robot_position, offset);
+    if moved {
+      self.robot_position = (self.robot_position.0.checked_add_signed(offset.0).unwrap(), self.robot_position.1.checked_add_signed(offset.1).unwrap());
+      self.last_failed_movement = None;
+    } else {
+      self.last_failed_movement = Some(direction);
+    }
+  }
+
+  fn shift(&mut self, index: (usize, usize), direction: (isize, isize)) -> bool {
+    /* Just a useless quick check */
+    if index.0 >= self.map.len() { return false; }
+    if index.1 >= self.map[index.0].len() { return false; }
+
+    match self.map[index.0][index.1] {
+      None => { return true; },
+      Some(s) => {
+        if s == Content::Wall { return false; }
+
+        let neighbour = (index.0.checked_add_signed(direction.0).unwrap(), index.1.checked_add_signed(direction.1).unwrap());
+        let can_move = self.shift(neighbour, direction);
+
+        if can_move {
+          self.map[neighbour.0][neighbour.1] = self.map[index.0][index.1];
+          self.map[index.0][index.1] = None;
+        }
+
+        return can_move;
+      }
+    }
+  }
+
+  fn print(&self) {
+    for i in 0..self.map.len() {
+      for j in 0..self.map[i].len() {
+        match self.map[i][j] {
+          Some(Content::Wall) => { print!("[#]") },
+          Some(Content::Box) => { print!("[O]") },
+          Some(Content::Robot) => { print!("[@]") },
+          None => { print!("[.]") },
+        }
+      }
+      println!("");
+    }
+  }
+}

@@ -12,14 +12,6 @@ pub fn resolve(input_data_path: &str) {
 fn transform_data(data: Vec<String>) -> Vec<Robot> {
   let mut result = vec![];
 
-  for line in data {
-    let mut s = line.split(" ");
-    let (p, v) = (s.next().unwrap(), s.last().unwrap());
-    let position = extract_numbers(p);
-    let velocity = extract_numbers(v);
-    result.push(Robot { start_position: position, velocity, end_position: position });
-  }
-
   result
 }
 fn extract_numbers(chars: &str) -> (i32, i32) {
