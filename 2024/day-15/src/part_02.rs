@@ -25,9 +25,24 @@ pub fn resolve(input_data_path: &str) {
     warehouse.do_move(Direction::West);
     warehouse.print();
     println!("*****");
-//    warehouse.do_move(Direction::North);
-//    warehouse.print();
-//    println!("*****");
+    warehouse.do_move(Direction::North);
+    warehouse.print();
+    println!("*****");
+    warehouse.do_move(Direction::North);
+    warehouse.print();
+    println!("*****");
+    warehouse.do_move(Direction::West);
+    warehouse.print();
+    println!("*****");
+    warehouse.do_move(Direction::West);
+    warehouse.print();
+    println!("*****");
+    warehouse.do_move(Direction::North);
+    warehouse.print();
+    println!("*****");
+    warehouse.do_move(Direction::North);
+    warehouse.print();
+    println!("*****");
 
 
   let final_result = warehouse.gps();
@@ -158,6 +173,8 @@ impl Warehouse {
     let next_index = (index.0.checked_add_signed(direction.0).unwrap(), index.1.checked_add_signed(direction.1).unwrap());
     let can_move = self.can_move_up_or_down(next_index, direction);
 
+    println!("Can move: {}", can_move);
+
     if can_move {
       self.do_shift_up_or_down(next_index, direction);
       self.map[next_index.0][next_index.1] = self.map[index.0][index.1];
@@ -171,17 +188,18 @@ impl Warehouse {
     match self.map[index.0][index.1] {
       None | Some(Content::Wall) => {},
       Some(Content::LeftBoxEdge) => {
-        self.map[next_index.0][next_index.1] = self.map[index.0][index.1];
         self.do_shift_up_or_down(next_index, direction);
-        self.do_shift_up_or_down((index.0.checked_add_signed(1).unwrap(), index.1), direction);
+        self.map[next_index.0][next_index.1] = self.map[index.0][index.1];
+        self.map[index.0][index.1] = None;
+        self.do_shift_up_or_down((index.0, index.1.checked_add_signed(1).unwrap()), direction);
       },
       Some(Content::RightBoxEdge) => {
-        self.map[next_index.0][next_index.1] = self.map[index.0][index.1];
         self.do_shift_up_or_down(next_index, direction);
-        self.do_shift_up_or_down((index.0.checked_add_signed(-1).unwrap(), index.1), direction);
+        self.map[next_index.0][next_index.1] = self.map[index.0][index.1];
+        self.map[index.0][index.1] = None;
+        self.do_shift_up_or_down((index.0, index.1.checked_add_signed(-1).unwrap()), direction);
       },
       Some(Content::Robot) => {
-        self.map[next_index.0][next_index.1] = self.map[index.0][index.1];
       }
     }
   }
@@ -198,9 +216,9 @@ impl Warehouse {
         let neighbour = (index.0.checked_add_signed(direction.0).unwrap(), index.1.checked_add_signed(direction.1).unwrap());
         let other_edge;
         if s == Content::LeftBoxEdge {
-          other_edge = (index.0.checked_add_signed(direction.0 + 1).unwrap(), index.1.checked_add_signed(direction.1).unwrap());
+          other_edge = (index.0.checked_add_signed(direction.0).unwrap(), index.1.checked_add_signed(direction.1 + 1).unwrap());
         } else if s == Content::RightBoxEdge {
-          other_edge = (index.0.checked_add_signed(direction.0 - 1).unwrap(), index.1.checked_add_signed(direction.1).unwrap());
+          other_edge = (index.0.checked_add_signed(direction.0).unwrap(), index.1.checked_add_signed(direction.1 - 1).unwrap());
         } else {
           // Should not happen
           other_edge = neighbour;
