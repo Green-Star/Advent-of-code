@@ -98,7 +98,7 @@ impl Maze {
     loop {
       self.yet_to_explore.make_contiguous().sort_by(|a, b| a.exploring_score.cmp(&b.exploring_score));
       match self.yet_to_explore.pop_front() {
-        Some(e) => {  print_exploring(&self, &e); self.explore_path(e) },
+        Some(e) => self.explore_path(e),
         None => break,
       }
     }
