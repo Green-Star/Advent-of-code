@@ -95,33 +95,43 @@ struct Maze {
 }
 impl Maze {
   fn explore(&mut self) {
+    /* I will do sort of a Dijkstra algorithm here */
     loop {
       self.yet_to_explore.make_contiguous().sort_by(|a, b| a.exploring_score.cmp(&b.exploring_score));
       match self.yet_to_explore.pop_front() {
+        /* Grab the closest from start yet-to-explore path (filled with the starting tile at beginning) and explore it straight ahead */
         Some(e) => self.explore_path(e),
+        /* If there isn't any path to explore, we're finished */
         None => break,
       }
     }
   }
 
+  /* Explore one path, straight ahead, recording all connected paths to it */
   fn explore_path(&mut self, e: Explorer) {
-    /* Stop as soon as we bump into a wall */
+    /* Explore the current tile: */
+    /* Stop if have bumped into a wall */
     match self.map[e.position.0][e.position.1].content {
       Some(Content::Wall) => return,
       None => {},
     }
 
+    /* If the tile have already been explored by another path which was closer of the starting tile: stop here (we're not on the shortest path - no need to go further) */
     match self.map[e.position.0][e.position.1].exploring_score {
       Some(score) => if e.exploring_score >= score { return },
       None => {},
     }
+    /* Record the exploring score on the tile */
     self.map[e.position.0][e.position.1].exploring_score = Some(e.exploring_score);
 
+    /* If we already found a path to the end of the maze, and this tile is already beyond this distance, stop here (we're already too far) */
     match self.map[self.ending_position.0][self.ending_position.1].exploring_score {
       Some(score) => if e.exploring_score >= score { return },
       None => {},
     }
 
+    /* Let's check the other vertices on this tile */
+    /* For both left and right, if there is another path starting from this tile (i.e. the tile on the left - or right - is not a wall), record it the yet-to-explore vector */
     let left = e.turn_left();
     match self.map[left.position.0][left.position.1].content {
       None => self.yet_to_explore.push_back(left),
@@ -133,6 +143,7 @@ impl Maze {
       _ => {},
     }
 
+    /* And then, let's move on this straight line by going one tile forward */
     let next_position = (e.position.0.checked_add_signed(e.direction.offset().0).unwrap(), e.position.1.checked_add_signed(e.direction.offset().1).unwrap());
     self.explore_path(Explorer { direction: e.direction, position: next_position, exploring_score: e.exploring_score + 1 });
   }
