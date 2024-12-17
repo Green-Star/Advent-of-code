@@ -4,7 +4,7 @@ pub fn resolve(input_data_path: &str) {
 
   let final_result = 0;
 
-  println!("Part 2 final result: {}", final_result);
+  println!("Part 1 final result: {}", final_result);
 }
 
 fn transform_data(data: Vec<String>) -> Vec<String> {
