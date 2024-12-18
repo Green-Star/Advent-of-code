@@ -110,21 +110,16 @@ impl Maze {
   /* Explore one path, straight ahead, recording all connected paths to it */
   fn explore_path(&mut self, e: Explorer) {
     /* Explore the current tile: */
-    /* Stop if have bumped into a wall */
-    match self.map[e.position.0][e.position.1].content {
-      Some(Content::Wall) => return,
-      None => {},
-    }
-
     /* If the tile have already been explored by another path which was closer of the starting tile: stop here (we're not on the shortest path - no need to go further) */
     match self.map[e.position.0][e.position.1].exploring_score {
-      Some(score) => if e.exploring_score >= score { return },
+      Some(score) => if e.exploring_score > score { return },
       None => {},
     }
     /* Record the exploring score on the tile */
     self.map[e.position.0][e.position.1].exploring_score = Some(e.exploring_score);
 
     /* If we already found a path to the end of the maze, and this tile is already beyond this distance, stop here (we're already too far) */
+    /* Note that this way, we'll stop as soon as we reach the ending tile */
     match self.map[self.ending_position.0][self.ending_position.1].exploring_score {
       Some(score) => if e.exploring_score >= score { return },
       None => {},
@@ -143,9 +138,22 @@ impl Maze {
       _ => {},
     }
 
-    /* And then, let's move on this straight line by going one tile forward */
+    /* And now, let's focus on our path... */
     let next_position = (e.position.0.checked_add_signed(e.direction.offset().0).unwrap(), e.position.1.checked_add_signed(e.direction.offset().1).unwrap());
-    self.explore_path(Explorer { direction: e.direction, position: next_position, exploring_score: e.exploring_score + 1 });
+    /* Check next tile: */
+    let move_on = {
+      match self.map[next_position.0][next_position.1].content {
+        Some(Content::Wall) => false,
+        None => true,
+      }
+    };
+    if move_on {
+      /* If we can go onto this straight line, let's move on by going one tile forward */
+      self.explore_path(Explorer { direction: e.direction, position: next_position, exploring_score: e.exploring_score + 1 });
+    } else {
+      /* If we're heading to the wall, then stop here, and add 1000 to the exploring score of the tile (because we'll have to turn on this tile) */
+      self.map[e.position.0][e.position.1].exploring_score = Some(e.exploring_score + 1000);
+    }
   }
 }
 
