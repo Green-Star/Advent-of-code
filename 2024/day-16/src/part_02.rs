@@ -6,15 +6,10 @@ pub fn resolve(input_data_path: &str) {
 
   maze.explore();
   maze.find_best_path();
-//  print_explored_maze(&maze);
-//  println!("*****");
-//  print_best_path(&maze);
 
-  if let Some(final_result) = maze.map[maze.ending_position.0][maze.ending_position.1].exploring_score {
-    println!("Part 2 final result: {}", final_result);
-  } else {
-    println!("No result!");
-  }
+  let final_result: usize = maze.map.iter().map(|v| v.iter().filter(|t| t.is_best).collect::<Vec<&Tile>>()).map(|fv| fv.len()).sum();
+
+  println!("Part 2 final result: {}", final_result);
 }
 
 fn transform_data(data: Vec<String>) -> Maze {
