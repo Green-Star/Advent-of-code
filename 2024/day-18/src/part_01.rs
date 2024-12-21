@@ -4,7 +4,7 @@ pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
 
   let size = 6;
-  let mut maze = transform_data(data, size + 1);
+  let mut maze = transform_data(data, 12, size + 1);
 
   print_maze(&maze);
 //  maze.explore();
@@ -24,16 +24,19 @@ pub fn resolve(input_data_path: &str) {
   println!("Part 1 final result: {}", final_result);
 }
 
-fn transform_data(data: Vec<String>, grid_length: usize) -> Maze {
+fn transform_data(data: Vec<String>, limit: i32, grid_length: usize) -> Maze {
   let mut map = vec![vec![Tile { content: None, exploring_score: None }; grid_length]; grid_length];
   let ending_position = (grid_length - 1, grid_length - 1);
   let mut explorer = VecDeque::new();
   explorer.push_back(Explorer { position: (0, 0), direction: Direction::East, exploring_score: 0 });
 
+  let mut i = 1;
   for s in data {
     let mut split = s.split(",");
     let (y, x) = (split.next().unwrap().parse::<usize>().unwrap(), split.last().unwrap().parse::<usize>().unwrap());
     map[x][y] = Tile { content: Some(Content::Wall), exploring_score: None };
+    if i >= limit { break }
+    i += 1;
   }
 
   Maze { map, ending_position, yet_to_explore: explorer }
@@ -48,6 +51,7 @@ struct Location {
 }
 
 // Je dois trouver un moyen de garder que les plus courts sommets
+//  Open List == Map (sommet -> vec![old]) ?
 fn a_star_search(map: &Vec<Vec<Tile>>, start_location: &Location, end_location: &Location) -> Result<Vec<Location>, ()> {
   let mut closed_list = vec![];
   let mut open_list = VecDeque::new();
@@ -56,10 +60,13 @@ fn a_star_search(map: &Vec<Vec<Tile>>, start_location: &Location, end_location: 
   loop {
     let location;
     open_list.make_contiguous().sort_by(|a, b| a.heuristic.cmp(&b.heuristic));
+    println!("Pending queue: {:?}", open_list);
     match open_list.pop_front() {
       None => break,
       Some(l) => location = l,
     }
+
+    println!("Exploring ({}, {})...", location.x, location.y);
 
     if location.x == end_location.x && location.y == end_location.y {
       closed_list.push(location);
@@ -67,6 +74,26 @@ fn a_star_search(map: &Vec<Vec<Tile>>, start_location: &Location, end_location: 
     }
 
     if let Some((north_x, north_y)) = get_neighbour_index(map, location, Direction::North) {
+      let neighbour = Location { x: north_x, y: north_y, score: location.score + 1, heuristic:  distance_to(&(north_x, north_y), &(end_location.x, end_location.y)) };
+
+      if map[neighbour.x][neighbour.y].content == None && closed_list.iter().any(|l| l.x == neighbour.x && l.y == neighbour.y) == false {
+        match open_list.iter().find(|l| l.x == neighbour.x && l.y == neighbour.y) {
+          None => {
+            println!("Add North ({}, {})", neighbour.x, neighbour.y);
+            open_list.push_back(neighbour);
+          },
+          Some(v) => {
+            if v.score > neighbour.score {
+              open_list.retain(|l| l.x != neighbour.x || l.y != neighbour.y);
+              println!("Replace North ({}, {})", neighbour.x, neighbour.y);
+              open_list.push_back(neighbour);
+            } else if v.score == neighbour.score {
+
+            }
+          }
+        }
+      }
+      /*
       let neighbour = Location { x: north_x, y: north_y, score: location.score, heuristic: location.heuristic };
       if map[neighbour.x][neighbour.y].content == None &&
         !(closed_list.iter().any(|l| l.x == neighbour.x && l.y == neighbour.y) ||
@@ -76,12 +103,15 @@ fn a_star_search(map: &Vec<Vec<Tile>>, start_location: &Location, end_location: 
           x: north_x,
           y: north_y,
           score: location.score + 1,
-          heuristic: location.score + 1 + distance_to(&(north_x, north_y), &(end_location.x, end_location.y)),
+          heuristic: distance_to(&(north_x, north_y), &(end_location.x, end_location.y)),
         };
+        println!("Add North ({}, {})", v.x, v.y);
         open_list.push_back(v.clone());
       }
+      */
     }
     if let Some((east_x, east_y)) = get_neighbour_index(map, location, Direction::East) {
+      /*
       let neighbour = Location { x: east_x, y: east_y, score: location.score, heuristic: location.heuristic };
       if map[neighbour.x][neighbour.y].content == None &&
         !(closed_list.iter().any(|l| l.x == neighbour.x && l.y == neighbour.y) ||
@@ -91,12 +121,34 @@ fn a_star_search(map: &Vec<Vec<Tile>>, start_location: &Location, end_location: 
           x: east_x,
           y: east_y,
           score: location.score + 1,
-          heuristic: location.score + 1 + distance_to(&(east_x, east_y), &(end_location.x, end_location.y)),
+          heuristic: distance_to(&(east_x, east_y), &(end_location.x, end_location.y)),
         };
+        println!("Add East ({}, {})", v.x, v.y);
         open_list.push_back(v.clone());
+      }
+      */
+      let neighbour = Location { x: east_x, y: east_y, score: location.score + 1, heuristic:  distance_to(&(east_x, east_y), &(end_location.x, end_location.y)) };
+
+      if map[neighbour.x][neighbour.y].content == None && closed_list.iter().any(|l| l.x == neighbour.x && l.y == neighbour.y) == false {
+        match open_list.iter().find(|l| l.x == neighbour.x && l.y == neighbour.y) {
+          None => {
+            println!("Add East ({}, {})", neighbour.x, neighbour.y);
+            open_list.push_back(neighbour);
+          },
+          Some(v) => {
+            if v.score > neighbour.score {
+              open_list.retain(|l| l.x != neighbour.x || l.y != neighbour.y);
+              println!("Replace East ({}, {})", neighbour.x, neighbour.y);
+              open_list.push_back(neighbour);
+            } else if v.score == neighbour.score {
+
+            }
+          }
+        }
       }
     }
     if let Some((south_x, south_y)) = get_neighbour_index(map, location, Direction::South) {
+      /*
       let neighbour = Location { x: south_x, y: south_y, score: location.score, heuristic: location.heuristic };
       if map[neighbour.x][neighbour.y].content == None &&
         !(closed_list.iter().any(|l| l.x == neighbour.x && l.y == neighbour.y) ||
@@ -106,12 +158,34 @@ fn a_star_search(map: &Vec<Vec<Tile>>, start_location: &Location, end_location: 
           x: south_x,
           y: south_y,
           score: location.score + 1,
-          heuristic: location.score + 1 + distance_to(&(south_x, south_y), &(end_location.x, end_location.y)),
+          heuristic: distance_to(&(south_x, south_y), &(end_location.x, end_location.y)),
         };
+        println!("Add South ({}, {})", v.x, v.y);
         open_list.push_back(v.clone());
+      }
+      */
+      let neighbour = Location { x: south_x, y: south_y, score: location.score + 1, heuristic:  distance_to(&(south_x, south_y), &(end_location.x, end_location.y)) };
+
+      if map[neighbour.x][neighbour.y].content == None && closed_list.iter().any(|l| l.x == neighbour.x && l.y == neighbour.y) == false {
+        match open_list.iter().find(|l| l.x == neighbour.x && l.y == neighbour.y) {
+          None => {
+            println!("Add South ({}, {})", neighbour.x, neighbour.y);
+            open_list.push_back(neighbour);
+          },
+          Some(v) => {
+            if v.score > neighbour.score {
+              open_list.retain(|l| l.x != neighbour.x || l.y != neighbour.y);
+              println!("Replace South ({}, {})", neighbour.x, neighbour.y);
+              open_list.push_back(neighbour);
+            } else if v.score == neighbour.score {
+
+            }
+          }
+        }
       }
     }
     if let Some((west_x, west_y)) = get_neighbour_index(map, location, Direction::West) {
+      /*
       let neighbour = Location { x: west_x, y: west_y, score: location.score, heuristic: location.heuristic };
       if map[neighbour.x][neighbour.y].content == None &&
         !(closed_list.iter().any(|l| l.x == neighbour.x && l.y == neighbour.y) ||
@@ -121,13 +195,36 @@ fn a_star_search(map: &Vec<Vec<Tile>>, start_location: &Location, end_location: 
           x: west_x,
           y: west_y,
           score: location.score + 1,
-          heuristic: location.score + 1 + distance_to(&(west_x, west_y), &(end_location.x, end_location.y)),
+          heuristic: distance_to(&(west_x, west_y), &(end_location.x, end_location.y)),
         };
+        println!("Add West ({}, {})", v.x, v.y);
         open_list.push_back(v.clone());
+      }
+      */
+      let neighbour = Location { x: west_x, y: west_y, score: location.score + 1, heuristic:  distance_to(&(west_x, west_y), &(end_location.x, end_location.y)) };
+
+      if map[neighbour.x][neighbour.y].content == None && closed_list.iter().any(|l| l.x == neighbour.x && l.y == neighbour.y) == false {
+        match open_list.iter().find(|l| l.x == neighbour.x && l.y == neighbour.y) {
+          None => {
+            println!("Add West ({}, {})", neighbour.x, neighbour.y);
+            open_list.push_back(neighbour);
+          },
+          Some(v) => {
+            if v.score > neighbour.score {
+              open_list.retain(|l| l.x != neighbour.x || l.y != neighbour.y);
+              println!("Replace West ({}, {})", neighbour.x, neighbour.y);
+              open_list.push_back(neighbour);
+            } else if v.score == neighbour.score {
+
+            }
+          }
+        }
       }
     }
 
     closed_list.push(location);
+
+    println!("*****");
   }
 
   Err(())
