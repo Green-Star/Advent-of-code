@@ -73,25 +73,16 @@ impl StateMachine {
   }
   fn get_combo_operand_value(&self, operand: i32) -> i32 {
     match operand {
+      0..=3 => operand,
       4 => self.a,
       5 => self.b,
       6 => self.c,
-      _ => operand,
+      _ => panic!("Not a valid operand!"),
     }
   }
   fn do_dv(&self, instruction: i32, operand: i32) -> i32 {
-    let denominator = {
-      if operand == 4 {
-        self.a
-      } else if operand == 5 {
-        self.b
-      } else if operand == 6 {
-        self.c
-      } else {
-        2_i32.pow(operand as u32)
-      }
-    };
-    self.a / denominator
+    let denominator = self.get_combo_operand_value(operand);
+    self.a >> denominator
   }
   fn adv(&self, instruction: i32, operand: i32) -> StateMachine {
     let result = self.do_dv(instruction, operand);
@@ -102,7 +93,7 @@ impl StateMachine {
     StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
   }
   fn bst(&self, instruction: i32, operand: i32) -> StateMachine {
-    let result = self.get_combo_operand_value(operand) & 8;
+    let result = self.get_combo_operand_value(operand) & 7;
     StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
   }
   fn jnz(&self, instruction: i32, operand: i32) -> StateMachine {
@@ -118,7 +109,7 @@ impl StateMachine {
   }
   fn out(&self, instruction: i32, operand: i32) -> StateMachine {
     let mut result = self.outputs.clone();
-    result.push(self.get_combo_operand_value(operand) % 8);
+    result.push(self.get_combo_operand_value(operand) & 7);
     StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: result }
   }
   fn bdv(&self, instruction: i32, operand: i32) -> StateMachine {
