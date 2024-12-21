@@ -2,41 +2,165 @@ use std::collections::VecDeque;
 
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
-  let mut maze = transform_data(data);
 
-  maze.explore();
+  let size = 6;
+  let mut maze = transform_data(data, size + 1);
 
-  if let Some(final_result) = maze.map[maze.ending_position.0][maze.ending_position.1].exploring_score {
-    println!("Part 1 final result: {}", final_result);
-  } else {
-    println!("No result!");
-  }
+  print_maze(&maze);
+//  maze.explore();
+  println!("*****");
+
+
+  let searched = a_star_search(&maze.map, &Location { x: 0, y: 0, score: 0, heuristic: (size*size) as i32},&Location { x: size, y: size, score: (size*size) as i32, heuristic: 0 });
+  if searched.is_err() { println!("Not found!"); return; };
+  let searched = searched.unwrap();
+  print_a_start_searched_maze(&maze.map, &searched);
+  let finished = searched.iter().find(|l| l.x == size && l.y == size).unwrap();
+  println!("Shortest path: {}", finished.score);
+
+
+  let final_result = 0;
+
+  println!("Part 1 final result: {}", final_result);
 }
 
-fn transform_data(data: Vec<String>) -> Maze {
-  let mut map = vec![];
-  let mut ending_position = (0, 0);
+fn transform_data(data: Vec<String>, grid_length: usize) -> Maze {
+  let mut map = vec![vec![Tile { content: None, exploring_score: None }; grid_length]; grid_length];
+  let ending_position = (grid_length - 1, grid_length - 1);
   let mut explorer = VecDeque::new();
-  let mut x = 0;
+  explorer.push_back(Explorer { position: (0, 0), direction: Direction::East, exploring_score: 0 });
 
   for s in data {
-    let mut line = vec![];
-    let mut y = 0;
-    for c in s.chars() {
-      match c {
-        '#' => { line.push(Tile { content: Some(Content::Wall), exploring_score: None }); },
-        'E' => { line.push(Tile { content: None, exploring_score: None }); ending_position = (x, y); },
-        'S' => { line.push(Tile { content: None, exploring_score: None }); explorer.push_back(Explorer { position: (x, y), direction: Direction::East, exploring_score: 0 }); },
-        _ => { line.push(Tile { content: None, exploring_score: None }); }
-      }
-      y += 1;
-    }
-    map.push(line);
-    x += 1;
+    let mut split = s.split(",");
+    let (y, x) = (split.next().unwrap().parse::<usize>().unwrap(), split.last().unwrap().parse::<usize>().unwrap());
+    map[x][y] = Tile { content: Some(Content::Wall), exploring_score: None };
   }
 
   Maze { map, ending_position, yet_to_explore: explorer }
 }
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+struct Location {
+  x: usize,
+  y: usize,
+  score: i32,
+  heuristic: i32,
+}
+
+// Je dois trouver un moyen de garder que les plus courts sommets
+fn a_star_search(map: &Vec<Vec<Tile>>, start_location: &Location, end_location: &Location) -> Result<Vec<Location>, ()> {
+  let mut closed_list = vec![];
+  let mut open_list = VecDeque::new();
+
+  open_list.push_back(*start_location);
+  loop {
+    let location;
+    open_list.make_contiguous().sort_by(|a, b| a.heuristic.cmp(&b.heuristic));
+    match open_list.pop_front() {
+      None => break,
+      Some(l) => location = l,
+    }
+
+    if location.x == end_location.x && location.y == end_location.y {
+      closed_list.push(location);
+      return Ok(closed_list);
+    }
+
+    if let Some((north_x, north_y)) = get_neighbour_index(map, location, Direction::North) {
+      let neighbour = Location { x: north_x, y: north_y, score: location.score, heuristic: location.heuristic };
+      if map[neighbour.x][neighbour.y].content == None &&
+        !(closed_list.iter().any(|l| l.x == neighbour.x && l.y == neighbour.y) ||
+          open_list.iter().any(|l| l.x == neighbour.x && l.y == neighbour.y && l.score < neighbour.score))
+      {
+        let v = Location {
+          x: north_x,
+          y: north_y,
+          score: location.score + 1,
+          heuristic: location.score + 1 + distance_to(&(north_x, north_y), &(end_location.x, end_location.y)),
+        };
+        open_list.push_back(v.clone());
+      }
+    }
+    if let Some((east_x, east_y)) = get_neighbour_index(map, location, Direction::East) {
+      let neighbour = Location { x: east_x, y: east_y, score: location.score, heuristic: location.heuristic };
+      if map[neighbour.x][neighbour.y].content == None &&
+        !(closed_list.iter().any(|l| l.x == neighbour.x && l.y == neighbour.y) ||
+          open_list.iter().any(|l| l.x == neighbour.x && l.y == neighbour.y && l.score < neighbour.score))
+      {
+        let v = Location {
+          x: east_x,
+          y: east_y,
+          score: location.score + 1,
+          heuristic: location.score + 1 + distance_to(&(east_x, east_y), &(end_location.x, end_location.y)),
+        };
+        open_list.push_back(v.clone());
+      }
+    }
+    if let Some((south_x, south_y)) = get_neighbour_index(map, location, Direction::South) {
+      let neighbour = Location { x: south_x, y: south_y, score: location.score, heuristic: location.heuristic };
+      if map[neighbour.x][neighbour.y].content == None &&
+        !(closed_list.iter().any(|l| l.x == neighbour.x && l.y == neighbour.y) ||
+          open_list.iter().any(|l| l.x == neighbour.x && l.y == neighbour.y && l.score < neighbour.score))
+      {
+        let v = Location {
+          x: south_x,
+          y: south_y,
+          score: location.score + 1,
+          heuristic: location.score + 1 + distance_to(&(south_x, south_y), &(end_location.x, end_location.y)),
+        };
+        open_list.push_back(v.clone());
+      }
+    }
+    if let Some((west_x, west_y)) = get_neighbour_index(map, location, Direction::West) {
+      let neighbour = Location { x: west_x, y: west_y, score: location.score, heuristic: location.heuristic };
+      if map[neighbour.x][neighbour.y].content == None &&
+        !(closed_list.iter().any(|l| l.x == neighbour.x && l.y == neighbour.y) ||
+          open_list.iter().any(|l| l.x == neighbour.x && l.y == neighbour.y && l.score < neighbour.score))
+      {
+        let v = Location {
+          x: west_x,
+          y: west_y,
+          score: location.score + 1,
+          heuristic: location.score + 1 + distance_to(&(west_x, west_y), &(end_location.x, end_location.y)),
+        };
+        open_list.push_back(v.clone());
+      }
+    }
+
+    closed_list.push(location);
+  }
+
+  Err(())
+}
+
+fn get_neighbour_index(map: &Vec<Vec<Tile>>, location: Location, direction: Direction) -> Option<(usize, usize)> {
+  let (offset_x, offset_y) = direction.offset();
+  match (location.x.checked_add_signed(offset_x), location.y.checked_add_signed(offset_y)) {
+    (Some(x), Some(y)) => {
+      if x >= map.len() { return None }
+      if y >= map[x].len() { return None }
+
+      Some((x, y))
+    },
+    _ => None,
+  }
+}
+
+fn print_a_start_searched_maze(map: &Vec<Vec<Tile>>, searched: &Vec<Location>) {
+  for i in 0..map.len() {
+    for j in 0..map[i].len() {
+      if searched.iter().any(|l| l.x == i && l.y == j) {
+        print!("X");
+      } else if map[i][j].content == Some(Content::Wall) {
+        print!("#");
+      } else {
+        print!(".");
+      }
+    }
+    println!("");
+  }
+}
+
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -84,6 +208,10 @@ enum Content {
 struct Tile {
   content: Option<Content>,
   exploring_score: Option<i32>,
+/*
+  g_score: Option<i32>,
+  f_score: Option<i32>,
+  */
 }
 
 #[derive(Debug, Clone)]
@@ -94,6 +222,30 @@ struct Maze {
   yet_to_explore: VecDeque<Explorer>,
 }
 impl Maze {
+  /*
+  fn a_star(&mut self) {
+    let e = Explorer { position: (0, 0), direction: Direction::East, exploring_score: 0 };
+
+    let mut open_set = VecDeque::new();
+    open_set.push_back(e);
+
+    let came_from = HashSet::new();
+
+    self.map[e.position.0][e.position.1].g_score = Some(0);
+    self.map[e.position.0][e.position.1].f_score = Some(distance_to(&e.position, &self.ending_position));
+
+    loop {
+      open_set.make_contiguous().sort_by(|a, b| a.exploring_score.cmp(&b.exploring_score));
+      match self.yet_to_explore.pop_front() {
+        /* Grab the closest from start yet-to-explore path (filled with the starting tile at beginning) and explore it straight ahead */
+        Some(e) => self.explore_path(e),
+        /* If there isn't any path to explore, we're finished */
+        None => break,
+      }
+    }
+
+  }
+
   fn explore(&mut self) {
     /* I will do sort of a Dijkstra algorithm here */
     loop {
@@ -154,6 +306,24 @@ impl Maze {
       /* If we're heading to the wall, then stop here, and add 1000 to the exploring score of the tile (because we'll have to turn on this tile) */
       self.map[e.position.0][e.position.1].exploring_score = Some(e.exploring_score + 1000);
     }
+  }
+  */
+}
+
+fn distance_to(pos: &(usize, usize), ending_position: &(usize, usize)) -> i32 {
+  ((ending_position.0 - pos.0) + (ending_position.1 - pos.1)) as i32
+}
+
+
+fn print_maze(maze: &Maze) {
+  for i in 0..maze.map.len() {
+    for j in 0..maze.map[i].len() {
+      match maze.map[i][j].content {
+        Some(Content::Wall) => print!("#"),
+        None => print!("."),
+      }
+    }
+    println!("");
   }
 }
 
