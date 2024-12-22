@@ -1,105 +1,161 @@
+use std::result;
+
+use crate::core::parse_number_list;
+
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
-  let _ = transform_data(data);
+  let machine = transform_data(data);
 
-  let final_result = 0;
+  println!("{:?}", machine);
 
+  let mut finished_machine;
+  let mut i = 1;
+  loop {
+    if i % 100_000 == 0 { println!("{i}") }
+    let mut test = machine.clone();
+    test.a = i;
+    match test.process_until_halt() {
+      Some(machine) => { finished_machine = machine; break; },
+      None => i += 1,
+    }
+  }
+
+//  let finished_machine = machine.process_until_halt();
+  println!("{} - {:?}", i, finished_machine);
+
+  let final_result = i;
   println!("Part 2 final result: {}", final_result);
 }
 
-fn transform_data(data: Vec<String>) -> HikingMap {
-  let mut result = vec![];
+fn transform_data(data: Vec<String>) -> StateMachine {
+  let s = data[0].split(": ");
+  let a = s.last().unwrap().parse().unwrap();
 
-  for i in 0..data.len() {
-    let mut line = vec![];
-    for c in data[i].chars() {
-      line.push(Topographic { level: c.to_digit(10).unwrap_or(11), trails: vec![] });
-    }
-    result.push(line);
-  }
+  let s = data[1].split(": ");
+  let b = s.last().unwrap().parse().unwrap();
 
-  HikingMap { map: result }
-}
+  let s = data[2].split(": ");
+  let c = s.last().unwrap().parse().unwrap();
 
+  let s = data[4].split(": ");
+  let opcodes = parse_number_list(s.last().unwrap());
 
-#[derive(Debug, Clone)]
-struct Topographic {
-  level: u32,
-  trails: Vec<(usize, usize)>,
-}
-impl Topographic {
-  fn get_score(&self) -> usize {
-    self.trails.len()
-  }
+  StateMachine { a, b, c, instruction: 0, opcodes, outputs: vec![] }
 }
 
 #[derive(Debug, Clone)]
-struct HikingMap {
-  map: Vec<Vec<Topographic>>,
+struct StateMachine {
+  a: i32,
+  b: i32,
+  c: i32,
+
+  instruction: usize,
+  opcodes: Vec<i32>,
+
+  outputs: Vec<i32>,
 }
-impl HikingMap {
-  fn compute_hiking_trails(&mut self) {
-    for i in 0..self.map.len() {
-      for j in 0..self.map[i].len() {
-        if self.map[i][j].level == 9 {
-          self.follow_one_hiking_trail((i, j));
-        }
-      }
-    }
-  }
-  fn follow_one_hiking_trail(&mut self, start_index: (usize, usize)) {
-    self.map[start_index.0][start_index.1].trails.push(start_index);
+impl StateMachine {
+  fn process_until_halt(&self) -> Option<StateMachine> {
+    let mut result = self.clone();
 
-    /* Explore the 4 next indexes (North / West / East / South) */
-    self.explore_one_hiking_trail((start_index.0.checked_add_signed(-1), start_index.1.checked_add_signed(0)), self.map[start_index.0][start_index.1].level, start_index);
-    self.explore_one_hiking_trail((start_index.0.checked_add_signed(0), start_index.1.checked_add_signed(-1)), self.map[start_index.0][start_index.1].level, start_index);
-    self.explore_one_hiking_trail((start_index.0.checked_add_signed(0), start_index.1.checked_add_signed(1)), self.map[start_index.0][start_index.1].level, start_index);
-    self.explore_one_hiking_trail((start_index.0.checked_add_signed(1), start_index.1.checked_add_signed(0)), self.map[start_index.0][start_index.1].level, start_index);
-  }
+    loop {
+      match result.opcodes.get(result.instruction) {
+        Some(op) => {
+          let instruction = *op;
+          let operand = result.opcodes[result.instruction + 1];
+          result.instruction += 2;
+          result = result.process_next_instruction(instruction, operand);
 
-  fn explore_one_hiking_trail(&mut self, position: (Option<usize>, Option<usize>), previous_slope: u32, top_index: (usize, usize)) {
-    let x;
-    let y;
-
-    /* Check if the current index to explore is inside the map (if not, stop here - there's nothing to explore) */
-    match position {
-      (Some(a), Some(b)) => {
-        if a >= self.map.len() { return }
-        if b >= self.map[a].len() { return }
-        x = a;
-        y = b;
-      }
-      _ => { return }
-    }
-
-    /* Check if we're still in the hiking trail (i.e. if the last explored index was 1 level above us) */
-    let level = self.map[x][y].level;
-    if level != (previous_slope - 1) { return }
-
-    /* We're on the trail to `top_index`!, store it in our reachable trails */
-    self.map[x][y].trails.push(top_index);
-
-    /* One quick check: if we're at ground level, there's nothing more to explore, so we'll stop here */
-    if self.map[x][y].level == 0 { return }
-
-    /* Otherwise, let's keep on following our trail path */
-    /* (let's explore our 4 connected indexes) */
-    self.explore_one_hiking_trail((x.checked_add_signed(-1), y.checked_add_signed(0)), level, top_index);
-    self.explore_one_hiking_trail((x.checked_add_signed(0), y.checked_add_signed(-1)), level, top_index);
-    self.explore_one_hiking_trail((x.checked_add_signed(0), y.checked_add_signed(1)), level, top_index);
-    self.explore_one_hiking_trail((x.checked_add_signed(1), y.checked_add_signed(0)), level, top_index);
-  }
-  fn get_trailheads(&self) -> Vec<&Topographic> {
-    let mut trailheads = vec![];
-
-    for v in &self.map {
-      for t in v {
-        if t.level == 0 {
-          trailheads.push(t);
-        }
+          if result.outputs.len() > result.opcodes.len() { return None }
+          for i in 0..result.outputs.len() {
+            if result.outputs[i] != result.opcodes[i] { return None }
+          }
+        },
+        None => break
       }
     }
 
-    trailheads
+    if result.opcodes == result.outputs { Some(result) }
+    else { None }
+  }
+
+  fn process_next_instruction(&self, instruction: i32, operand: i32) -> StateMachine {
+    match instruction {
+      0 => self.adv(operand),
+      1 => self.bxl(operand),
+      2 => self.bst(operand),
+      3 => self.jnz(operand),
+      4 => self.bxc(operand),
+      5 => self.out(operand),
+      6 => self.bdv(operand),
+      7 => self.cdv(operand),
+      _ => StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
+    }
+  }
+  fn get_combo_operand_value(&self, operand: i32) -> i32 {
+    match operand {
+      0..=3 => operand,
+      4 => self.a,
+      5 => self.b,
+      6 => self.c,
+      _ => panic!("Not a valid operand!"),
+    }
+  }
+  fn do_dv(&self, operand: i32) -> i32 {
+    let denominator = self.get_combo_operand_value(operand);
+    self.a >> denominator
+  }
+  fn adv(&self, operand: i32) -> StateMachine {
+    let result = self.do_dv(operand);
+    StateMachine { a: result, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
+  }
+  fn bxl(&self, operand: i32) -> StateMachine {
+    let result = self.b ^ operand;
+    StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
+  }
+  fn bst(&self, operand: i32) -> StateMachine {
+    let result = self.get_combo_operand_value(operand) & 7;
+    StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
+  }
+  fn jnz(&self, operand: i32) -> StateMachine {
+    if self.a == 0 {
+      StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
+    } else {
+      StateMachine { a: self.a, b: self.b, c: self.c, instruction: operand as usize, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
+    }
+  }
+  fn bxc(&self, _: i32) -> StateMachine {
+    let result = self.b ^ self.c;
+    StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
+  }
+  fn out(&self, operand: i32) -> StateMachine {
+    let mut result = self.outputs.clone();
+    result.push(self.get_combo_operand_value(operand) & 7);
+    StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: result }
+  }
+  fn bdv(&self, operand: i32) -> StateMachine {
+    let result = self.do_dv(operand);
+    StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
+  }
+  fn cdv(&self, operand: i32) -> StateMachine {
+    let result = self.do_dv(operand);
+    StateMachine { a: self.a, b: self.b, c: result, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
+  }
+
+
+  fn test(&self, instruction: i32, operand: i32) -> StateMachine {
+    let mut out = self.outputs.clone();
+    out.push(operand);
+    StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: out }
+  }
+
+  fn get_output_string(&self) -> String {
+    let mut s = "".to_string();
+
+    for i in &self.outputs {
+      s = format!("{s},{i}");
+    }
+
+    s.strip_prefix(",").unwrap().to_string()
   }
 }
