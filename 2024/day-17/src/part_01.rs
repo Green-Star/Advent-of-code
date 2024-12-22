@@ -60,14 +60,14 @@ impl StateMachine {
 
   fn process_next_instruction(&self, instruction: i32, operand: i32) -> StateMachine {
     match instruction {
-      0 => self.adv(instruction, operand),
-      1 => self.bxl(instruction, operand),
-      2 => self.bst(instruction, operand),
-      3 => self.jnz(instruction, operand),
-      4 => self.bxc(instruction, operand),
-      5 => self.out(instruction, operand),
-      6 => self.bdv(instruction, operand),
-      7 => self.cdv(instruction, operand),
+      0 => self.adv(operand),
+      1 => self.bxl(operand),
+      2 => self.bst(operand),
+      3 => self.jnz(operand),
+      4 => self.bxc(operand),
+      5 => self.out(operand),
+      6 => self.bdv(operand),
+      7 => self.cdv(operand),
       _ => StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
     }
   }
@@ -80,52 +80,45 @@ impl StateMachine {
       _ => panic!("Not a valid operand!"),
     }
   }
-  fn do_dv(&self, instruction: i32, operand: i32) -> i32 {
+  fn do_dv(&self, operand: i32) -> i32 {
     let denominator = self.get_combo_operand_value(operand);
     self.a >> denominator
   }
-  fn adv(&self, instruction: i32, operand: i32) -> StateMachine {
-    let result = self.do_dv(instruction, operand);
+  fn adv(&self, operand: i32) -> StateMachine {
+    let result = self.do_dv(operand);
     StateMachine { a: result, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
   }
-  fn bxl(&self, instruction: i32, operand: i32) -> StateMachine {
+  fn bxl(&self, operand: i32) -> StateMachine {
     let result = self.b ^ operand;
     StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
   }
-  fn bst(&self, instruction: i32, operand: i32) -> StateMachine {
+  fn bst(&self, operand: i32) -> StateMachine {
     let result = self.get_combo_operand_value(operand) & 7;
     StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
   }
-  fn jnz(&self, instruction: i32, operand: i32) -> StateMachine {
+  fn jnz(&self, operand: i32) -> StateMachine {
     if self.a == 0 {
       StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
     } else {
       StateMachine { a: self.a, b: self.b, c: self.c, instruction: operand as usize, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
     }
   }
-  fn bxc(&self, instruction: i32, operand: i32) -> StateMachine {
+  fn bxc(&self, _: i32) -> StateMachine {
     let result = self.b ^ self.c;
     StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
   }
-  fn out(&self, instruction: i32, operand: i32) -> StateMachine {
+  fn out(&self, operand: i32) -> StateMachine {
     let mut result = self.outputs.clone();
     result.push(self.get_combo_operand_value(operand) & 7);
     StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: result }
   }
-  fn bdv(&self, instruction: i32, operand: i32) -> StateMachine {
-    let result = self.do_dv(instruction, operand);
+  fn bdv(&self, operand: i32) -> StateMachine {
+    let result = self.do_dv(operand);
     StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
   }
-  fn cdv(&self, instruction: i32, operand: i32) -> StateMachine {
-    let result = self.do_dv(instruction, operand);
+  fn cdv(&self, operand: i32) -> StateMachine {
+    let result = self.do_dv(operand);
     StateMachine { a: self.a, b: self.b, c: result, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
-  }
-
-
-  fn test(&self, instruction: i32, operand: i32) -> StateMachine {
-    let mut out = self.outputs.clone();
-    out.push(operand);
-    StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: out }
   }
 
   fn get_output_string(&self) -> String {
