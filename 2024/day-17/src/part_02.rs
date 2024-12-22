@@ -1,5 +1,3 @@
-use std::result;
-
 use crate::core::parse_number_list;
 
 pub fn resolve(input_data_path: &str) {
@@ -8,23 +6,19 @@ pub fn resolve(input_data_path: &str) {
 
   println!("{:?}", machine);
 
-  let mut start: i64 = 35282534841844;
-// -> too high! let mut start: i64 = 106094283126537;
-// between
-//    106094283126537
-//     13261785268224
   /* Borrowing issue... */
   let target= machine.opcodes.clone();
 
   let start = find_output_pattern(&machine.opcodes, target);
   println!("Seed found: {}", start);
+
   let mut test = machine.clone();
   test.a = start;
+  println!("{:?}", test);
   test = test.process_until_halt().unwrap();
   println!("{:?}", test);
 
-
-  let final_result = 0;
+  let final_result = start;
   println!("Part 2 final result: {}", final_result);
 }
 
@@ -47,22 +41,6 @@ fn find_output_pattern(opcodes: &Vec<i64>, target: Vec<i64>) -> i64 {
 
   a_start
 }
-
-/*
-fn findAMatchingOutput(program: Vec<i32>, target: Vec<i32>) -> i32 {
-  let mut aStart = if (target.len() == 1) {
-      0
-  } else {
-      8 * findAMatchingOutput(program, &target[1..])
-  }
-
-  while( run(program, aStart) != target) {
-      aStart++
-  }
-
-  return aStart
-}
-  */
 
 fn transform_data(data: Vec<String>) -> StateMachine {
   let s = data[0].split(": ");
@@ -171,22 +149,5 @@ impl StateMachine {
   fn cdv(&self, operand: i64) -> StateMachine {
     let result = self.do_dv(operand);
     StateMachine { a: self.a, b: self.b, c: result, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
-  }
-
-
-  fn test(&self, instruction: i64, operand: i64) -> StateMachine {
-    let mut out = self.outputs.clone();
-    out.push(operand);
-    StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: out }
-  }
-
-  fn get_output_string(&self) -> String {
-    let mut s = "".to_string();
-
-    for i in &self.outputs {
-      s = format!("{s},{i}");
-    }
-
-    s.strip_prefix(",").unwrap().to_string()
   }
 }
