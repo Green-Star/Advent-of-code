@@ -8,116 +8,46 @@ pub fn resolve(input_data_path: &str) {
 
   println!("{:?}", machine);
 
-  /*
-  let mut finished_machine;
-  let mut i = 0;
-  let mut i = (0 * 8) + 3 * 8;
-  let mut i = ((0 * 8) + 3 * 8) * 8 + 4 * 8;
-  let mut i = (((0 * 8) + 3 * 8) * 8 + 4 * 8) * 8 + 5 * 8;
-  let mut i = ((((0 * 8) + 3 * 8) * 8 + 4 * 8) * 8 + 5 * 8) * 8 + 3 * 8;
-  let mut i = (((((0 * 8) + 3 * 8) * 8 + 4 * 8) * 8 + 5 * 8) * 8 + 3 * 8) * 8 + 0 * 8;
-//  let mut i = ((1 * 8 + 3 * 8) * 8 + 4 * 8) * 8 + 5 * 8;
-//  let mut i = ((24) * 8 + 4 * 8) * 8 + 5 * 8;
-//i = 1;
-//i = i * 8 + 3 * 8;
-  loop {
-    break;
-
-    if i % 100 == 0 { println!("{i}") }
-    let mut test = machine.clone();
-    test.a = i;
-    match test.process_until_halt() {
-      Some(machine) => { finished_machine = machine; println!("{i} - {}", finished_machine.get_output_string()); i += 1},
-      None => i += 64,
-    }
-
-    /* Toutes les puissance de 8, on gagne un output de plus */
-    /* Comment on détermine sa valeur ? */
-    /* Exemple:  */
-    /* 224 - 4,3,0
-      1792 (224*8) - 0,4,3,0
-      14336 (224 * 8 * 8) - 0,0,4,3,0
-    */
-    /* Au sein d'une puissance de 8, on peut faire des + 8 pour ajuster la premiere valeur */
-
-    /**** */
-    /* En somme, tu prends l'output a l'envers */
-    /* i = 0 */
-    /* Ensuite, Pour chaques output -> i = (i * 8) + output * 8 */
-    /* A la fin, tu obtiens dans i, le nombre que tu cherches ? */
-    /* A voir demain, mais si c'est ca c'est facile */
-    /**** */
-
-    if i > 225 { break; }
-    break;
-  }
-  */
-/*
-  test.a = 12304;
-  test.a = 12304 <<3;
-*/
-
-/*
-[2, 4, 1, 5, 7, 5, 1, 6, 0, 3, 4, 0, 5, 5, 3, 0]
-00000000000000011000000011111000 - 98552
-[4, 3, 0, 5, 3, 0]
-00000000000000011000000100011000 - 98584
-[3, 0, 5, 5, 3, 0]
-*/
-//0b00000000000011000000111111000000
-//opcodes: [2, 4, 1, 5, 7, 5, 1, 6, 0, 3, 4, 0, 5, 5, 3, 0], outputs:
-//                                    [5, 4, 3, 5, 5, 3, 0]
-
   let mut start: i64 = 35282534841844;
 // -> too high! let mut start: i64 = 106094283126537;
 // between
 //    106094283126537
 //     13261785268224
+  /* Borrowing issue... */
+  let target= machine.opcodes.clone();
 
-
+  let start = find_output_pattern(&machine.opcodes, target);
+  println!("Seed found: {}", start);
   let mut test = machine.clone();
   test.a = start;
-  let test = test.process_until_halt().unwrap();
+  test = test.process_until_halt().unwrap();
   println!("{:?}", test);
-  println!("len: {}", test.outputs.len());
 
-  for i in 0..=5_000_000 {
-    let mut test = machine.clone();
-    test.a = start + i;
-
-//    println!("{:032b} - {}", test.a, test.a);
-    let test = test.process_until_halt().unwrap();
-
-    if i % 1_000_000 == 0 {
-      println!("Iteration: {}", i);
-    }
-    let mut ok = true;
-    for j in 10..15 {
-      if test.outputs[j] != test.opcodes[j+1] { ok = false }
-    }
-    if ok {
-      println!("Found: ");
-      println!("{:032b} - {}", start + i, start + i);
-      println!("{:?}", test);
-    }
-//    println!("{:?}", test);
-//    println!("len: {}", test.outputs.len());
-  }
-
-  let final_result = 0;
-/*
-  let mut test = machine.clone();
-  test.a = i;
-  let test = test.process_until_halt().unwrap();
-  println!("{:?}", test);
-*/
-
-//  let finished_machine = machine.process_until_halt();
-//  println!("{} - {:?}", i, finished_machine);
 
   let final_result = 0;
   println!("Part 2 final result: {}", final_result);
 }
+
+fn find_output_pattern(opcodes: &Vec<i64>, target: Vec<i64>) -> i64 {
+  let mut a_start = if target.len() == 1 {
+    0
+  } else {
+    8 * find_output_pattern(opcodes, target[1..].to_vec())
+  };
+
+  loop {
+    let machine = StateMachine { a: a_start, b: 0, c: 0, instruction: 0, opcodes: opcodes.clone(), outputs: vec![] };
+    let out = machine.process_until_halt().unwrap();
+
+    if out.outputs == target { break }
+    a_start += 1;
+  }
+
+  println!("Found length {} - {} / Pattern {:?}", target.len(), a_start, target);
+
+  a_start
+}
+
 /*
 fn findAMatchingOutput(program: Vec<i32>, target: Vec<i32>) -> i32 {
   let mut aStart = if (target.len() == 1) {
@@ -172,22 +102,12 @@ impl StateMachine {
           let operand = result.opcodes[result.instruction + 1];
           result.instruction += 2;
           result = result.process_next_instruction(instruction, operand);
-/*
-          if result.outputs.len() > result.opcodes.len() { return None }
-          for i in 0..result.outputs.len() {
-            if result.outputs[i] != result.opcodes[i] { return None }
-          }
-          */
         },
         None => break
       }
     }
 
     Some(result)
-/*
-    if result.opcodes == result.outputs { Some(result) }
-    else { None }
-    */
   }
 
   fn process_next_instruction(&self, instruction: i64, operand: i64) -> StateMachine {
