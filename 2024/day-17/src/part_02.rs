@@ -8,6 +8,7 @@ pub fn resolve(input_data_path: &str) {
 
   println!("{:?}", machine);
 
+  /*
   let mut finished_machine;
   let mut i = 0;
   let mut i = (0 * 8) + 3 * 8;
@@ -50,25 +51,88 @@ pub fn resolve(input_data_path: &str) {
     if i > 225 { break; }
     break;
   }
+  */
+/*
+  test.a = 12304;
+  test.a = 12304 <<3;
+*/
 
-  let mut i = 0;
-  for o in machine.opcodes.iter().rev() {
-    i = i * 8 + o * 8;
+/*
+[2, 4, 1, 5, 7, 5, 1, 6, 0, 3, 4, 0, 5, 5, 3, 0]
+00000000000000011000000011111000 - 98552
+[4, 3, 0, 5, 3, 0]
+00000000000000011000000100011000 - 98584
+[3, 0, 5, 5, 3, 0]
+*/
+//0b00000000000011000000111111000000
+//opcodes: [2, 4, 1, 5, 7, 5, 1, 6, 0, 3, 4, 0, 5, 5, 3, 0], outputs:
+//                                    [5, 4, 3, 5, 5, 3, 0]
+
+  let mut start: i64 = 35282534841844;
+// -> too high! let mut start: i64 = 106094283126537;
+// between
+//    106094283126537
+//     13261785268224
+
+
+  let mut test = machine.clone();
+  test.a = start;
+  let test = test.process_until_halt().unwrap();
+  println!("{:?}", test);
+  println!("len: {}", test.outputs.len());
+
+  for i in 0..=5_000_000 {
+    let mut test = machine.clone();
+    test.a = start + i;
+
+//    println!("{:032b} - {}", test.a, test.a);
+    let test = test.process_until_halt().unwrap();
+
+    if i % 1_000_000 == 0 {
+      println!("Iteration: {}", i);
+    }
+    let mut ok = true;
+    for j in 10..15 {
+      if test.outputs[j] != test.opcodes[j+1] { ok = false }
+    }
+    if ok {
+      println!("Found: ");
+      println!("{:032b} - {}", start + i, start + i);
+      println!("{:?}", test);
+    }
+//    println!("{:?}", test);
+//    println!("len: {}", test.outputs.len());
   }
-  let final_result = i;
 
+  let final_result = 0;
+/*
   let mut test = machine.clone();
   test.a = i;
   let test = test.process_until_halt().unwrap();
   println!("{:?}", test);
-
+*/
 
 //  let finished_machine = machine.process_until_halt();
 //  println!("{} - {:?}", i, finished_machine);
 
-  let final_result = i;
+  let final_result = 0;
   println!("Part 2 final result: {}", final_result);
 }
+/*
+fn findAMatchingOutput(program: Vec<i32>, target: Vec<i32>) -> i32 {
+  let mut aStart = if (target.len() == 1) {
+      0
+  } else {
+      8 * findAMatchingOutput(program, &target[1..])
+  }
+
+  while( run(program, aStart) != target) {
+      aStart++
+  }
+
+  return aStart
+}
+  */
 
 fn transform_data(data: Vec<String>) -> StateMachine {
   let s = data[0].split(": ");
@@ -88,14 +152,14 @@ fn transform_data(data: Vec<String>) -> StateMachine {
 
 #[derive(Debug, Clone)]
 struct StateMachine {
-  a: i32,
-  b: i32,
-  c: i32,
+  a: i64,
+  b: i64,
+  c: i64,
 
   instruction: usize,
-  opcodes: Vec<i32>,
+  opcodes: Vec<i64>,
 
-  outputs: Vec<i32>,
+  outputs: Vec<i64>,
 }
 impl StateMachine {
   fn process_until_halt(&self) -> Option<StateMachine> {
@@ -126,7 +190,7 @@ impl StateMachine {
     */
   }
 
-  fn process_next_instruction(&self, instruction: i32, operand: i32) -> StateMachine {
+  fn process_next_instruction(&self, instruction: i64, operand: i64) -> StateMachine {
     match instruction {
       0 => self.adv(operand),
       1 => self.bxl(operand),
@@ -139,7 +203,7 @@ impl StateMachine {
       _ => StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
     }
   }
-  fn get_combo_operand_value(&self, operand: i32) -> i32 {
+  fn get_combo_operand_value(&self, operand: i64) -> i64 {
     match operand {
       0..=3 => operand,
       4 => self.a,
@@ -148,49 +212,49 @@ impl StateMachine {
       _ => panic!("Not a valid operand!"),
     }
   }
-  fn do_dv(&self, operand: i32) -> i32 {
+  fn do_dv(&self, operand: i64) -> i64 {
     let denominator = self.get_combo_operand_value(operand);
     self.a >> denominator
   }
-  fn adv(&self, operand: i32) -> StateMachine {
+  fn adv(&self, operand: i64) -> StateMachine {
     let result = self.do_dv(operand);
     StateMachine { a: result, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
   }
-  fn bxl(&self, operand: i32) -> StateMachine {
+  fn bxl(&self, operand: i64) -> StateMachine {
     let result = self.b ^ operand;
     StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
   }
-  fn bst(&self, operand: i32) -> StateMachine {
+  fn bst(&self, operand: i64) -> StateMachine {
     let result = self.get_combo_operand_value(operand) & 7;
     StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
   }
-  fn jnz(&self, operand: i32) -> StateMachine {
+  fn jnz(&self, operand: i64) -> StateMachine {
     if self.a == 0 {
       StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
     } else {
       StateMachine { a: self.a, b: self.b, c: self.c, instruction: operand as usize, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
     }
   }
-  fn bxc(&self, _: i32) -> StateMachine {
+  fn bxc(&self, _: i64) -> StateMachine {
     let result = self.b ^ self.c;
     StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
   }
-  fn out(&self, operand: i32) -> StateMachine {
+  fn out(&self, operand: i64) -> StateMachine {
     let mut result = self.outputs.clone();
     result.push(self.get_combo_operand_value(operand) & 7);
     StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: result }
   }
-  fn bdv(&self, operand: i32) -> StateMachine {
+  fn bdv(&self, operand: i64) -> StateMachine {
     let result = self.do_dv(operand);
     StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
   }
-  fn cdv(&self, operand: i32) -> StateMachine {
+  fn cdv(&self, operand: i64) -> StateMachine {
     let result = self.do_dv(operand);
     StateMachine { a: self.a, b: self.b, c: result, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
   }
 
 
-  fn test(&self, instruction: i32, operand: i32) -> StateMachine {
+  fn test(&self, instruction: i64, operand: i64) -> StateMachine {
     let mut out = self.outputs.clone();
     out.push(operand);
     StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: out }
