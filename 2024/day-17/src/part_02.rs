@@ -9,19 +9,62 @@ pub fn resolve(input_data_path: &str) {
   println!("{:?}", machine);
 
   let mut finished_machine;
-  let mut i = 1;
+  let mut i = 0;
+  let mut i = (0 * 8) + 3 * 8;
+  let mut i = ((0 * 8) + 3 * 8) * 8 + 4 * 8;
+  let mut i = (((0 * 8) + 3 * 8) * 8 + 4 * 8) * 8 + 5 * 8;
+  let mut i = ((((0 * 8) + 3 * 8) * 8 + 4 * 8) * 8 + 5 * 8) * 8 + 3 * 8;
+  let mut i = (((((0 * 8) + 3 * 8) * 8 + 4 * 8) * 8 + 5 * 8) * 8 + 3 * 8) * 8 + 0 * 8;
+//  let mut i = ((1 * 8 + 3 * 8) * 8 + 4 * 8) * 8 + 5 * 8;
+//  let mut i = ((24) * 8 + 4 * 8) * 8 + 5 * 8;
+//i = 1;
+//i = i * 8 + 3 * 8;
   loop {
-    if i % 100_000 == 0 { println!("{i}") }
+    break;
+
+    if i % 100 == 0 { println!("{i}") }
     let mut test = machine.clone();
     test.a = i;
     match test.process_until_halt() {
-      Some(machine) => { finished_machine = machine; break; },
-      None => i += 1,
+      Some(machine) => { finished_machine = machine; println!("{i} - {}", finished_machine.get_output_string()); i += 1},
+      None => i += 64,
     }
+
+    /* Toutes les puissance de 8, on gagne un output de plus */
+    /* Comment on détermine sa valeur ? */
+    /* Exemple:  */
+    /* 224 - 4,3,0
+      1792 (224*8) - 0,4,3,0
+      14336 (224 * 8 * 8) - 0,0,4,3,0
+    */
+    /* Au sein d'une puissance de 8, on peut faire des + 8 pour ajuster la premiere valeur */
+
+    /**** */
+    /* En somme, tu prends l'output a l'envers */
+    /* i = 0 */
+    /* Ensuite, Pour chaques output -> i = (i * 8) + output * 8 */
+    /* A la fin, tu obtiens dans i, le nombre que tu cherches ? */
+    /* A voir demain, mais si c'est ca c'est facile */
+    /**** */
+
+    if i > 225 { break; }
+    break;
   }
 
+  let mut i = 0;
+  for o in machine.opcodes.iter().rev() {
+    i = i * 8 + o * 8;
+  }
+  let final_result = i;
+
+  let mut test = machine.clone();
+  test.a = i;
+  let test = test.process_until_halt().unwrap();
+  println!("{:?}", test);
+
+
 //  let finished_machine = machine.process_until_halt();
-  println!("{} - {:?}", i, finished_machine);
+//  println!("{} - {:?}", i, finished_machine);
 
   let final_result = i;
   println!("Part 2 final result: {}", final_result);
@@ -65,18 +108,22 @@ impl StateMachine {
           let operand = result.opcodes[result.instruction + 1];
           result.instruction += 2;
           result = result.process_next_instruction(instruction, operand);
-
+/*
           if result.outputs.len() > result.opcodes.len() { return None }
           for i in 0..result.outputs.len() {
             if result.outputs[i] != result.opcodes[i] { return None }
           }
+          */
         },
         None => break
       }
     }
 
+    Some(result)
+/*
     if result.opcodes == result.outputs { Some(result) }
     else { None }
+    */
   }
 
   fn process_next_instruction(&self, instruction: i32, operand: i32) -> StateMachine {
