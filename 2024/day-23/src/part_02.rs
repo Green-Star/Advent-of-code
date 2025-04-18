@@ -1,4 +1,8 @@
-use std::collections::{HashMap, HashSet};
+use core::net;
+use std::collections::HashMap;
+
+type Node = String;
+type NetworkMap = HashMap<Node, Vec<Node>>;
 
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
@@ -13,7 +17,7 @@ pub fn resolve(input_data_path: &str) {
   let largest_network = connection_map.first().unwrap();
   println!("Larget network: {:?}", largest_network);
 
-  let final_result = largest_network.len();
+  let final_result = get_network_password(largest_network.to_vec());
   println!("Part 2 final result: {}", final_result);
 }
 
@@ -60,5 +64,7 @@ fn node_can_be_added_to_network(map: &NetworkMap, node: &Node, network: &Vec<Nod
     network.iter().all(|vertice| map.get(vertice).unwrap().contains(node))
 }
 
-type Node = String;
-type NetworkMap = HashMap<Node, Vec<Node>>;
+fn get_network_password(mut network: Vec<Node>) -> String {
+    network.sort();
+    network.join(",")
+}
