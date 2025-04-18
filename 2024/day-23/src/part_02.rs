@@ -6,13 +6,14 @@ pub fn resolve(input_data_path: &str) {
 
   println!("{:?}", map);
 
-  let computer_sets = find_computer_sets(&map, "t");
-  println!("Cycles found: {:?}", computer_sets);
+  let mut connection_map = build_full_connections_map(&map);
+  println!("Full network found: {:?}", connection_map);
 
-  let sanitized_lan = drop_duplicate_cycles(computer_sets);
-  println!("LAN found: {:?}", sanitized_lan);
+  connection_map.sort_by(|a, b| b.len().cmp(&a.len()));
+  let largest_network = connection_map.first().unwrap();
+  println!("Larget network: {:?}", largest_network);
 
-  let final_result = sanitized_lan.len();
+  let final_result = largest_network.len();
   println!("Part 2 final result: {}", final_result);
 }
 
@@ -30,52 +31,33 @@ fn transform_data(data: Vec<String>) -> NetworkMap {
   map
 }
 
-fn find_computer_sets(map: &NetworkMap, pattern: &str) -> Vec<Vec<Node>> {
-  let mut result = vec![];
+fn build_full_connections_map(map: &NetworkMap) -> Vec<Vec<Node>> {
+    let mut connections_map = vec![];
 
-  for n in map.keys().filter(|node| node.starts_with(pattern)) {
-    if let Some(mut cycle) = find_cycle_from_vertice(map, n) {
-      result.append(&mut cycle);
+    for node in map.keys() {
+        connections_map = build_network_with_node(connections_map, node, map);
     }
-  }
 
-  result
+    connections_map
 }
 
-fn find_cycle_from_vertice(map: &NetworkMap, start_vertice: &Node) -> Option<Vec<Vec<Node>>> {
-  let mut result = vec![];
+fn build_network_with_node(connections: Vec<Vec<Node>>, node: &Node, map: &NetworkMap) -> Vec<Vec<Node>> {
+    let localhost = vec![ node.clone() ];
+    let mut connections_map = vec![ localhost.clone() ];
 
-  for neighbour_node in map.get(start_vertice).unwrap() {
-    if let Some(mut cycles) = find_cycle_of_3(map, start_vertice, neighbour_node) {
-      result.append(&mut cycles);
+    for network in connections {
+        if node_can_be_added_to_network(map, node, &network) {
+            let extended_network = vec![ network.clone(), localhost.clone() ].concat();
+            connections_map.push(extended_network);
+        }
+        connections_map.push(network);
     }
-  }
 
-  if result.is_empty() {
-    None
-  } else {
-    Some(result)
-  }
+    connections_map
 }
 
-fn find_cycle_of_3(map: &NetworkMap, start: &Node, second: &Node) -> Option<Vec<Vec<Node>>> {
-  let mut result = vec![];
-
-  for third_node in map.get(second).unwrap().iter().filter(|node| *node != start) {
-    if map.get(start).unwrap().contains(third_node) {
-      result.push(vec![start.clone(), second.clone(), third_node.clone()]);
-    }
-  }
-
-  if result.is_empty() {
-    None
-  } else {
-    Some(result)
-  }
-}
-
-fn drop_duplicate_cycles(cycles_list: Vec<Vec<Node>>) -> Vec<Vec<Node>> {
-  cycles_list.into_iter().map(|mut v| { v.sort(); v }).collect::<HashSet<_>>().into_iter().collect()
+fn node_can_be_added_to_network(map: &NetworkMap, node: &Node, network: &Vec<Node>) -> bool {
+    network.iter().all(|vertice| map.get(vertice).unwrap().contains(node))
 }
 
 type Node = String;
