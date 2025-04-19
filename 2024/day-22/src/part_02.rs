@@ -11,19 +11,15 @@ pub fn resolve(input_data_path: &str) {
   println!("Part 2 final result: {}", final_result);
 }
 
-fn transform_data(data: Vec<String>) -> NetworkMap {
-  let mut map: HashMap<Node, Vec<Node>> = HashMap::new();
+fn transform_data(data: Vec<String>) -> Vec<i64> {
+    let mut result = vec![];
 
-  for line in data {
-    let mut s = line.split("-");
-    let (a, b) = (s.next().unwrap().to_string(), s.last().unwrap().to_string());
+    for line in data {
+      result.push(line.parse().unwrap());
+    }
 
-    map.entry(a.clone()).and_modify(|neighbours| neighbours.push(b.clone())).or_insert(vec![ b.clone() ]);
-    map.entry(b.clone()).and_modify(|neighbours| neighbours.push(a.clone())).or_insert(vec![ a.clone() ] );
+    result
   }
-
-  map
-}
 
 fn build_full_connections_map(map: &NetworkMap) -> Vec<Vec<Node>> {
     let mut connections_map = vec![];
