@@ -7,8 +7,6 @@ pub fn resolve(input_data_path: &str) {
   let mut rainbow = SecretRainbow::new();
   let sequences = get_all_sequence_values(&mut rainbow, secret_numbers);
 
-//  println!("{:?}", sequences);
-
   let final_result = sequences.into_values().max().unwrap();
   println!("Part 2 final result: {}", final_result);
 }
@@ -51,18 +49,8 @@ type Sequence = (i64, i64, i64, i64);
 fn get_all_sequence_values(rainbow: &mut SecretRainbow, secrets: Vec<i64>) -> HashMap<Sequence, i64> {
   let mut result = HashMap::new();
 
-  /*
-  let sequences: Vec<HashMap<(i64, i64, i64, i64), i64>> = secrets.iter()
-                          .map(|secret| get_sequence_value_from_secret(rainbow, *secret))
-                          .collect();
-  sequences.into_iter()
-            .map(|(key, value)| result.entry(k).and_modify(|sum| *sum += v).or_insert(v));
-
-  */
-
   for secret in secrets {
     let sequence = get_sequence_value_from_secret(rainbow, secret);
-    //sequence.into_iter();
     for (k, v) in sequence {
       result.entry(k).and_modify(|sum| *sum += v).or_insert(v);
     }
