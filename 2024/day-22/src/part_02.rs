@@ -5,23 +5,11 @@ pub fn resolve(input_data_path: &str) {
   let secret_numbers = transform_data(data);
 
   let mut rainbow = SecretRainbow::new();
-  let changes = get_all_changes(&mut rainbow, secret_numbers);
+  let sequences = get_all_sequence_values(&mut rainbow, vec![123]);
 
-  let mut max = 0;
+//  println!("{:?}", sequences);
 
-  for a in -9..=9 {
-    println!("Testing {a}...");
-    for b in -9..=9 {
-      for c in -9..=9 {
-        for d in -9..=9 {
-          let bananas = get_sequence_value(&changes, &[a, b, c, d]);
-          if bananas > max { max = bananas }
-        }
-      }
-    }
-  }
-
-  let final_result = max;
+  let final_result = sequences.into_values().max().unwrap();
   println!("Part 1 final result: {}", final_result);
 }
 
@@ -57,6 +45,73 @@ fn next_secret(secret: i64) -> i64 {
 
   secret
 }
+
+type Sequence = (i64, i64, i64, i64);
+
+fn get_all_sequence_values(rainbow: &mut SecretRainbow, secrets: Vec<i64>) -> HashMap<Sequence, i64> {
+  let mut result = HashMap::new();
+
+  /*
+  let sequences: Vec<HashMap<(i64, i64, i64, i64), i64>> = secrets.iter()
+                          .map(|secret| get_sequence_value_from_secret(rainbow, *secret))
+                          .collect();
+  sequences.into_iter()
+            .map(|(key, value)| result.entry(k).and_modify(|sum| *sum += v).or_insert(v));
+
+  */
+
+  for secret in secrets {
+    let sequence = get_sequence_value_from_secret(rainbow, secret);
+    //sequence.into_iter();
+    for (k, v) in sequence {
+      result.entry(k).and_modify(|sum| *sum += v).or_insert(v);
+    }
+  }
+
+  result
+}
+fn get_sequence_value_from_secret(rainbow: &mut SecretRainbow, start: i64) -> HashMap<Sequence, i64> {
+  let mut result = HashMap::new();
+
+  let mut secret = start;
+
+  let mut previous_bananas = secret % 10;
+  secret = rainbow.get_next_secret(secret);
+  let mut bananas = secret % 10;
+  let mut a = bananas - previous_bananas;
+
+  previous_bananas = bananas;
+  secret = rainbow.get_next_secret(secret);
+  bananas = secret % 10;
+  let mut b = bananas - previous_bananas;
+
+  previous_bananas = bananas;
+  secret = rainbow.get_next_secret(secret);
+  bananas = secret % 10;
+  let mut c = bananas - previous_bananas;
+
+  previous_bananas = bananas;
+  secret = rainbow.get_next_secret(secret);
+  bananas = secret % 10;
+  let mut d = bananas - previous_bananas;
+
+//  for _ in 4..=2000 {
+  for _ in 4..10 {
+    result.entry((a, b, c, d)).or_insert(bananas);
+
+    a = b;
+    b = c;
+    c = d;
+
+    previous_bananas = bananas;
+    secret = rainbow.get_next_secret(secret);
+    bananas = secret % 10;
+    d = bananas - previous_bananas;
+  }
+
+  result
+}
+
 
 #[derive(Debug, Clone)]
 struct Change {

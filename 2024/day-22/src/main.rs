@@ -11,7 +11,7 @@ fn main() {
   println!("Part 1 found in {:?}s", elapsed.as_secs());
 
   let now = Instant::now();
-  part_02::resolve("./input.data");
+  part_02::resolve("./test.data");
   let elapsed = now.elapsed();
   println!("Part 2 found in {:?}s", elapsed.as_secs());
 }
