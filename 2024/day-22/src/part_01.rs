@@ -2,9 +2,12 @@ use std::collections::HashMap;
 
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
-  let map = transform_data(data);
+  let secret_numbers = transform_data(data);
 
-  let final_result = 0;
+  let mut rainbow = SecretRainbow::new();
+  let final_secret_numbers = rainbow.get_all_final_secrets(secret_numbers);
+
+  let final_result: i64 = final_secret_numbers.iter().sum();
   println!("Part 1 final result: {}", final_result);
 }
 
@@ -72,57 +75,6 @@ impl SecretRainbow {
     secrets.iter().map(|secret| self.get_final_secret(*secret)).collect()
   }
 }
-
-fn find_computer_sets(map: &NetworkMap, pattern: &str) -> Vec<Vec<Node>> {
-  let mut result = vec![];
-
-  for n in map.keys().filter(|node| node.starts_with(pattern)) {
-    if let Some(mut cycle) = find_cycle_from_vertice(map, n) {
-      result.append(&mut cycle);
-    }
-  }
-
-  result
-}
-
-fn find_cycle_from_vertice(map: &NetworkMap, start_vertice: &Node) -> Option<Vec<Vec<Node>>> {
-  let mut result = vec![];
-
-  for neighbour_node in map.get(start_vertice).unwrap() {
-    if let Some(mut cycles) = find_cycle_of_3(map, start_vertice, neighbour_node) {
-      result.append(&mut cycles);
-    }
-  }
-
-  if result.is_empty() {
-    None
-  } else {
-    Some(result)
-  }
-}
-
-fn find_cycle_of_3(map: &NetworkMap, start: &Node, second: &Node) -> Option<Vec<Vec<Node>>> {
-  let mut result = vec![];
-
-  for third_node in map.get(second).unwrap().iter().filter(|node| *node != start) {
-    if map.get(start).unwrap().contains(third_node) {
-      result.push(vec![start.clone(), second.clone(), third_node.clone()]);
-    }
-  }
-
-  if result.is_empty() {
-    None
-  } else {
-    Some(result)
-  }
-}
-
-fn drop_duplicate_cycles(cycles_list: Vec<Vec<Node>>) -> Vec<Vec<Node>> {
-  cycles_list.into_iter().map(|mut v| { v.sort(); v }).collect::<HashSet<_>>().into_iter().collect()
-}
-
-type Node = String;
-type NetworkMap = HashMap<Node, Vec<Node>>;
 
 #[cfg(test)]
 mod tests {
