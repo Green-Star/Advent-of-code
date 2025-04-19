@@ -5,12 +5,12 @@ pub fn resolve(input_data_path: &str) {
   let secret_numbers = transform_data(data);
 
   let mut rainbow = SecretRainbow::new();
-  let sequences = get_all_sequence_values(&mut rainbow, vec![123]);
+  let sequences = get_all_sequence_values(&mut rainbow, secret_numbers);
 
 //  println!("{:?}", sequences);
 
   let final_result = sequences.into_values().max().unwrap();
-  println!("Part 1 final result: {}", final_result);
+  println!("Part 2 final result: {}", final_result);
 }
 
 fn transform_data(data: Vec<String>) -> Vec<i64> {
@@ -95,8 +95,7 @@ fn get_sequence_value_from_secret(rainbow: &mut SecretRainbow, start: i64) -> Ha
   bananas = secret % 10;
   let mut d = bananas - previous_bananas;
 
-//  for _ in 4..=2000 {
-  for _ in 4..10 {
+  for _ in 4..=2000 {
     result.entry((a, b, c, d)).or_insert(bananas);
 
     a = b;
@@ -112,52 +111,6 @@ fn get_sequence_value_from_secret(rainbow: &mut SecretRainbow, start: i64) -> Ha
   result
 }
 
-
-#[derive(Debug, Clone)]
-struct Change {
-  bananas: i64,
-  change: i64,
-}
-
-fn get_changes_from_secret(rainbow: &mut SecretRainbow, start: i64) -> Vec<Change> {
-  let mut changes = vec![];
-
-  let mut secret = start;
-  let mut previous_bananas = secret % 10;
-
-  for _ in 2..=2000 {
-    secret = rainbow.get_next_secret(secret);
-
-    let bananas = secret % 10;
-    let change = bananas - previous_bananas;
-
-    changes.push(Change { bananas, change });
-
-    previous_bananas = bananas;
-  }
-
-  changes
-}
-
-fn get_all_changes(rainbow: &mut SecretRainbow, secrets: Vec<i64>) -> Vec<Vec<Change>> {
-  secrets.iter().map(|secret| get_changes_from_secret(rainbow, *secret)).collect()
-}
-
-fn get_sequence_value_in_change(change: &Vec<Change>, sequence: &[i64]) -> i64 {
-  if let Some(slice) = change.windows(4)
-                                        .find(|slice|
-                                                slice[0].change == sequence[0] &&
-                                                slice[1].change == sequence[1] &&
-                                                slice[2].change == sequence[2] &&
-                                                slice[3].change == sequence[3]) {
-    slice[3].bananas
-  } else {
-    0
-  }
-}
-fn get_sequence_value(changes: &Vec<Vec<Change>>, sequence: &[i64]) -> i64 {
-  changes.iter().map(|change| get_sequence_value_in_change(change, sequence)).sum()
-}
 
 #[derive(Debug, Clone)]
 struct SecretRainbow {
