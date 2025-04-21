@@ -152,7 +152,7 @@ fn transform_data(data: Vec<String>) -> (Vec<Pattern>, Vec<Design>) {
   let patterns: Vec<String> = data[0].split(",").map(|s| s.trim().to_string()).collect();
   let designs: Vec<String> = data.iter().skip(2).map(|s| s.to_string()).collect();
 
-  (patterns, vec![designs[0].clone()])
+  (patterns, designs)
 }
 
 type Pattern = String;
@@ -163,30 +163,17 @@ fn try_building_all_designs(designs: &Vec<Design>, patterns: &Vec<Pattern>) -> V
 }
 
 fn try_building_design(design: &Design, patterns: &Vec<Pattern>, map: &mut HashMap<Design, i64>) -> i64 {
-  if let Some(value) = map.get(design) { return *value; }
-  if design.is_empty() { return 1 ; }
+  if let Some(value) = map.get(design) { return *value }
+  if design.is_empty() { return 1 }
 
   let mut possibilities = 0;
   for p in patterns {
-    if p.len() > design.len() { continue; }
-    if design.starts_with(p) == false { continue; }
+    if p.len() > design.len() { continue }
+    if design.starts_with(p) == false { continue }
 
     possibilities += try_building_design(&String::from_iter(design.chars().skip(p.len())), patterns, map);
   }
 
   map.entry(design.clone()).and_modify(|e| *e += possibilities).or_insert(possibilities);
   possibilities
-  /*
-
-  let mut ways = 0;
-
-  for p in patterns {
-    if design.is_empty() { return 1 }
-    if design.starts_with(p) {
-      ways += try_building_design(&String::from_iter(design.chars().skip(p.len())), patterns);
-    }
-  }
-
-  ways
-  */
 }
