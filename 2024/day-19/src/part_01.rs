@@ -1,10 +1,6 @@
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
   let (patterns, designs) = transform_data(data);
-
-  println!("{:?}", patterns);
-  println!("{:?}", designs);
-
   let possible_designs = try_building_all_designs(&designs, &patterns);
 
   let final_result = possible_designs.len();
