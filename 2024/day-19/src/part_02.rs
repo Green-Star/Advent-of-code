@@ -27,13 +27,10 @@ fn try_building_design(design: &Design, patterns: &Vec<Pattern>, map: &mut HashM
   if let Some(value) = map.get(design) { return *value }
   if design.is_empty() { return 1 }
 
-  let mut possibilities = 0;
-  for p in patterns {
-    if p.len() > design.len() { continue }
-    if design.starts_with(p) == false { continue }
-
-    possibilities += try_building_design(&String::from_iter(design.chars().skip(p.len())), patterns, map);
-  }
+  let possibilities = patterns.iter()
+                                  .filter(|p| p.len() <= design.len() && design.starts_with(*p))
+                                  .map(|p| try_building_design(&String::from_iter(design.chars().skip(p.len())), patterns, map))
+                                  .sum();
 
   map.entry(design.clone()).and_modify(|e| *e += possibilities).or_insert(possibilities);
   possibilities
