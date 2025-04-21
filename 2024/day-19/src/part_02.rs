@@ -1,28 +1,93 @@
+use std::collections::{HashMap, HashSet};
+
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
-  let (patterns, designs) = transform_data(data);
+  let mut map = transform_data(data);
 
-  println!("{:?}", patterns);
-  println!("{:?}", designs);
+  println!("{:?}", map);
 
-  let possible_designs = try_building_all_designs(&designs, &patterns);
+  map.get_all_designs();
+  //  let possible_designs = try_building_all_designs(&designs, &patterns);
+  println!("{:?}", map);
 
-  let final_result: i64 = possible_designs.iter().sum();
+  let final_result: i64 = map.get_final_value();
   println!("Part 2 final result: {}", final_result);
 }
 
-fn transform_data(data: Vec<String>) -> (Vec<Pattern>, Vec<Design>) {
+fn transform_data(data: Vec<String>) -> DesignMap {
   let patterns: Vec<String> = data[0].split(",").map(|s| s.trim().to_string()).collect();
   let designs: Vec<String> = data.iter().skip(2).map(|s| s.to_string()).collect();
+  let length_max = designs.iter().map(|d| d.len()).max().unwrap();
+  let hashmap = HashMap::from_iter(patterns.iter().map(|p| (p.to_string(), 1)));
+  let hashset = HashSet::from_iter(patterns.iter().map(|p| p.to_string()));
 
-  (patterns, designs)
+  /*
+  let mut hashset = HashSet::new();
+  hashset.insert("g".to_string());
+  hashset.insert("gb".to_string());
+  */
+
+  DesignMap {
+    designs,
+    patterns,
+
+    design_length_max: length_max,
+    design_to_process: hashset,
+
+    semi_finished_design: hashmap,
+    finished_design: HashMap::new()
+  }
 }
 
 type Pattern = String;
 type Design = String;
 
+#[derive(Debug, Clone)]
+struct DesignMap {
+  designs: Vec<Design>,
+  patterns: Vec<Pattern>,
+
+  design_length_max: usize,
+  design_to_process: HashSet<Design>,
+
+  semi_finished_design: HashMap<Design, i64>,
+  finished_design: HashMap<Design, i64>,
+}
+impl DesignMap {
+  fn get_all_designs(&mut self) {
+    while self.design_to_process.is_empty() == false {
+      let design_to_process = self.design_to_process.clone();
+
+      self.design_to_process = HashSet::new();
+      for d in design_to_process {
+        self.build_next_design(d);
+      }
+    }
+  }
+
+  fn build_next_design(&mut self, design: Design) {
+    if self.designs.contains(&design) { self.finished_design.entry(design).and_modify(|e| *e *= 2).or_insert(1); return }
+    if design.len() >= self.design_length_max { return }
+
+    for p in &self.patterns {
+      let next_design = design.clone() + p;
+
+      if self.designs.iter().any(|design| design.starts_with(&next_design)) == false { continue; }
+
+      self.design_to_process.insert(next_design.clone());
+      self.semi_finished_design.entry(next_design).and_modify(|e| *e *= 2).or_insert(1);
+    }
+
+
+  }
+
+  fn get_final_value(&self) -> i64 {
+    self.finished_design.iter().map(|(_, value)| value).sum()
+  }
+}
+
 fn try_building_all_designs(designs: &Vec<Design>, patterns: &Vec<Pattern>) -> Vec<i64> {
-  designs.iter().filter_map(|d| try_building_design(d, patterns)).collect()
+  designs.iter().enumerate().filter_map(|(i, d)| {println!("Checking design {i}-{d}"); return try_building_design(d, patterns);}).collect()
 }
 
 fn try_building_end(design: &Design, patterns: &Vec<Pattern>) -> Option<()> {
