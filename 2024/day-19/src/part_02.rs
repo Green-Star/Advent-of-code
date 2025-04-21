@@ -7,7 +7,7 @@ pub fn resolve(input_data_path: &str) {
 
   let possible_designs = try_building_all_designs(&designs, &patterns);
 
-  let final_result = possible_designs.len();
+  let final_result: i64 = possible_designs.iter().sum();
   println!("Part 2 final result: {}", final_result);
 }
 
@@ -21,7 +21,7 @@ fn transform_data(data: Vec<String>) -> (Vec<Pattern>, Vec<Design>) {
 type Pattern = String;
 type Design = String;
 
-fn try_building_all_designs(designs: &Vec<Design>, patterns: &Vec<Pattern>) -> Vec<()> {
+fn try_building_all_designs(designs: &Vec<Design>, patterns: &Vec<Pattern>) -> Vec<i64> {
   designs.iter().filter_map(|d| try_building_design(d, patterns)).collect()
 }
 
@@ -51,22 +51,17 @@ fn try_building_end(design: &Design, patterns: &Vec<Pattern>) -> Option<()> {
   */
 }
 
-fn try_building_design(design: &Design, patterns: &Vec<Pattern>) -> Option<()> {
-  if design.is_empty() { return Some(()) }
+fn try_building_design(design: &Design, patterns: &Vec<Pattern>) -> Option<i64> {
+  if design.is_empty() { return Some(1) }
 
+  let mut posssible_designs = 0;
   for p in patterns {
     if design.starts_with(p) {
       let is_possible = try_building_design(&String::from_iter(design.chars().skip(p.len())), patterns);
-      if let Some(_) = is_possible { return is_possible }
+      if let Some(ok) = is_possible { posssible_designs += ok }
     }
   }
 
-  None
-}
-
-fn try_pattern() {}
-
-fn is_pattern_interesting(designs: &Vec<String>, length_max: usize, pattern: &Pattern) -> bool {
-  if pattern.len() >= length_max { return false }
-  designs.iter().any(|d| d.starts_with(pattern))
+  if posssible_designs > 0 { Some(posssible_designs) }
+  else { None }
 }
