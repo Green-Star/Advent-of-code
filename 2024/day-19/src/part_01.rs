@@ -25,32 +25,6 @@ fn try_building_all_designs(designs: &Vec<Design>, patterns: &Vec<Pattern>) -> V
   designs.iter().filter_map(|d| try_building_design(d, patterns)).collect()
 }
 
-fn try_building_end(design: &Design, patterns: &Vec<Pattern>) -> Option<()> {
-  if design.is_empty() { return Some(()) }
-
-  let result: Vec<()> = patterns.iter().filter_map(|p| {
-    if design.starts_with(p) {
-      return try_building_end(&String::from_iter(design.chars().skip(p.len())), patterns)
-    }
-    None
-  }).collect();
-
-  match result.is_empty() {
-    true => None,
-    false => Some(()),
-  }
-/*
-  for p in patterns {
-    if design.starts_with(p) {
-      let is_possible = try_building_end_of_design(&String::from_iter(design.chars().skip(p.len())), patterns);
-      if let Some(_) = is_possible { return is_possible }
-    }
-  }
-
-  None
-  */
-}
-
 fn try_building_design(design: &Design, patterns: &Vec<Pattern>) -> Option<()> {
   if design.is_empty() { return Some(()) }
 
@@ -62,11 +36,4 @@ fn try_building_design(design: &Design, patterns: &Vec<Pattern>) -> Option<()> {
   }
 
   None
-}
-
-fn try_pattern() {}
-
-fn is_pattern_interesting(designs: &Vec<String>, length_max: usize, pattern: &Pattern) -> bool {
-  if pattern.len() >= length_max { return false }
-  designs.iter().any(|d| d.starts_with(pattern))
 }

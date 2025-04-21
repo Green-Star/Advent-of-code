@@ -1,114 +1,72 @@
-use crate::core::parse_number_list;
-
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
-  let machine = transform_data(data);
+  let (patterns, designs) = transform_data(data);
 
-  let final_result = 0;
+  println!("{:?}", patterns);
+  println!("{:?}", designs);
+
+  let possible_designs = try_building_all_designs(&designs, &patterns);
+
+  let final_result = possible_designs.len();
   println!("Part 2 final result: {}", final_result);
 }
 
 fn transform_data(data: Vec<String>) -> (Vec<Pattern>, Vec<Design>) {
-  for line in data {
+  let patterns: Vec<String> = data[0].split(",").map(|s| s.trim().to_string()).collect();
+  let designs: Vec<String> = data.iter().skip(2).map(|s| s.to_string()).collect();
 
-  }
-
-  (vec![], vec![])
+  (patterns, designs)
 }
 
 type Pattern = String;
 type Design = String;
 
-#[derive(Debug, Clone)]
-struct StateMachine {
-  a: i64,
-  b: i64,
-  c: i64,
-
-  instruction: usize,
-  opcodes: Vec<i64>,
-
-  outputs: Vec<i64>,
+fn try_building_all_designs(designs: &Vec<Design>, patterns: &Vec<Pattern>) -> Vec<()> {
+  designs.iter().filter_map(|d| try_building_design(d, patterns)).collect()
 }
-impl StateMachine {
-  fn process_until_halt(&self) -> Option<StateMachine> {
-    let mut result = self.clone();
 
-    loop {
-      match result.opcodes.get(result.instruction) {
-        Some(op) => {
-          let instruction = *op;
-          let operand = result.opcodes[result.instruction + 1];
-          result.instruction += 2;
-          result = result.process_next_instruction(instruction, operand);
-        },
-        None => break
-      }
-    }
+fn try_building_end(design: &Design, patterns: &Vec<Pattern>) -> Option<()> {
+  if design.is_empty() { return Some(()) }
 
-    Some(result)
+  let result: Vec<()> = patterns.iter().filter_map(|p| {
+    if design.starts_with(p) {
+      return try_building_end(&String::from_iter(design.chars().skip(p.len())), patterns)
+    }
+    None
+  }).collect();
+
+  match result.is_empty() {
+    true => None,
+    false => Some(()),
+  }
+/*
+  for p in patterns {
+    if design.starts_with(p) {
+      let is_possible = try_building_end_of_design(&String::from_iter(design.chars().skip(p.len())), patterns);
+      if let Some(_) = is_possible { return is_possible }
+    }
   }
 
-  fn process_next_instruction(&self, instruction: i64, operand: i64) -> StateMachine {
-    match instruction {
-      0 => self.adv(operand),
-      1 => self.bxl(operand),
-      2 => self.bst(operand),
-      3 => self.jnz(operand),
-      4 => self.bxc(operand),
-      5 => self.out(operand),
-      6 => self.bdv(operand),
-      7 => self.cdv(operand),
-      _ => StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
+  None
+  */
+}
+
+fn try_building_design(design: &Design, patterns: &Vec<Pattern>) -> Option<()> {
+  if design.is_empty() { return Some(()) }
+
+  for p in patterns {
+    if design.starts_with(p) {
+      let is_possible = try_building_design(&String::from_iter(design.chars().skip(p.len())), patterns);
+      if let Some(_) = is_possible { return is_possible }
     }
   }
-  fn get_combo_operand_value(&self, operand: i64) -> i64 {
-    match operand {
-      0..=3 => operand,
-      4 => self.a,
-      5 => self.b,
-      6 => self.c,
-      _ => panic!("Not a valid operand!"),
-    }
-  }
-  fn do_dv(&self, operand: i64) -> i64 {
-    let denominator = self.get_combo_operand_value(operand);
-    self.a >> denominator
-  }
-  fn adv(&self, operand: i64) -> StateMachine {
-    let result = self.do_dv(operand);
-    StateMachine { a: result, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
-  }
-  fn bxl(&self, operand: i64) -> StateMachine {
-    let result = self.b ^ operand;
-    StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
-  }
-  fn bst(&self, operand: i64) -> StateMachine {
-    let result = self.get_combo_operand_value(operand) & 7;
-    StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
-  }
-  fn jnz(&self, operand: i64) -> StateMachine {
-    if self.a == 0 {
-      StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
-    } else {
-      StateMachine { a: self.a, b: self.b, c: self.c, instruction: operand as usize, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
-    }
-  }
-  fn bxc(&self, _: i64) -> StateMachine {
-    let result = self.b ^ self.c;
-    StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
-  }
-  fn out(&self, operand: i64) -> StateMachine {
-    let mut result = self.outputs.clone();
-    result.push(self.get_combo_operand_value(operand) & 7);
-    StateMachine { a: self.a, b: self.b, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: result }
-  }
-  fn bdv(&self, operand: i64) -> StateMachine {
-    let result = self.do_dv(operand);
-    StateMachine { a: self.a, b: result, c: self.c, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
-  }
-  fn cdv(&self, operand: i64) -> StateMachine {
-    let result = self.do_dv(operand);
-    StateMachine { a: self.a, b: self.b, c: result, instruction: self.instruction, opcodes: self.opcodes.clone(), outputs: self.outputs.clone() }
-  }
+
+  None
+}
+
+fn try_pattern() {}
+
+fn is_pattern_interesting(designs: &Vec<String>, length_max: usize, pattern: &Pattern) -> bool {
+  if pattern.len() >= length_max { return false }
+  designs.iter().any(|d| d.starts_with(pattern))
 }
