@@ -22,7 +22,7 @@ type Pattern = String;
 type Design = String;
 
 fn try_building_all_designs(designs: &Vec<Design>, patterns: &Vec<Pattern>) -> Vec<()> {
-  designs.iter().filter_map(|d| try_building_end_of_design(d, patterns)).collect()
+  designs.iter().filter_map(|d| try_building_design(d, patterns)).collect()
 }
 
 fn try_building_end(design: &Design, patterns: &Vec<Pattern>) -> Option<()> {
@@ -51,15 +51,12 @@ fn try_building_end(design: &Design, patterns: &Vec<Pattern>) -> Option<()> {
   */
 }
 
-fn try_building_end_of_design(design: &Design, patterns: &Vec<Pattern>) -> Option<()> {
-  println!("Checking {design}");
-
-  if design.is_empty() { println!("OK!"); return Some(()) }
+fn try_building_design(design: &Design, patterns: &Vec<Pattern>) -> Option<()> {
+  if design.is_empty() { return Some(()) }
 
   for p in patterns {
-    println!("Cheking {design} with {p}");
     if design.starts_with(p) {
-      let is_possible = try_building_end_of_design(&String::from_iter(design.chars().skip(p.len())), patterns);
+      let is_possible = try_building_design(&String::from_iter(design.chars().skip(p.len())), patterns);
       if let Some(_) = is_possible { return is_possible }
     }
   }
