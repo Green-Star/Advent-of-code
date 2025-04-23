@@ -93,7 +93,6 @@ impl Device {
                 .for_each(|gate| {
                   if let Some(a) = self.registers.get(&gate.a).unwrap() {
                     if let Some(b) = self.registers.get(&gate.b).unwrap() {
-                      println!("Processing {:?}", gate);
                       let out = gate.operation.process(a, b);
 
                       self.registers.entry(gate.output.clone()).and_modify(|e| *e = Some(out));
