@@ -3,7 +3,9 @@ use std::{collections::HashMap, result};
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
   let mut device = transform_data(data);
+  println!("{:?}", device);
 
+  device.process_until_halt();
   println!("{:?}", device);
 
   let final_result = 0;
@@ -15,16 +17,19 @@ fn transform_data(data: Vec<String>) -> Device {
   let mut gates = vec![];
 
   for line in data {
-    let mut s = line.split(": ");
-    if let Some(register) = s.next() {
+    if line.contains(": ") {
+      let mut s = line.split(": ");
+
+      let register = s.next().unwrap();
       let value: i64 = s.last().unwrap().parse().unwrap();
+
       registers.insert(register.to_string(), Some(value));
     }
+    else if line.contains(" -> ") {
+      let mut s = line.split(" -> ");
+      let gate = s.next().unwrap();
 
-    let mut s = line.split(" -> ");
-    if let Some(gate) = s.next() {
       let mut subsplit = gate.split(" ");
-
       let a = subsplit.next().unwrap();
       let opcode = match subsplit.next().unwrap() {
         "AND" => OpCode::AND,
@@ -36,6 +41,9 @@ fn transform_data(data: Vec<String>) -> Device {
 
       let output = s.last().unwrap();
 
+      registers.entry(a.to_string()).or_insert(None);
+      registers.entry(b.to_string()).or_insert(None);
+      registers.entry(output.to_string()).or_insert(None);
       gates.push(Gate { a: a.to_string(), b: b.to_string(), operation: opcode, output: output.to_string(), processed: false, value: 0 });
     }
   }
@@ -78,4 +86,39 @@ type Register = HashMap<String, Option<i64>>;
 struct Device {
   registers: Register,
   gates: Vec<Gate>,
+}
+impl Device {
+  fn process_until_halt(&mut self) {
+    while self.registers.iter().filter(|(key, _)| key.starts_with("z")).any(|(_, value)| value.is_none()) {
+      /*
+      println!("Processing...");
+      let _ = self.gates.iter_mut()
+                .filter(|gate| gate.processed == false)
+//                .filter(|gate| (&self.registers.get(&gate.a).unwrap()).is_some() && (&self.registers.get(&gate.b).unwrap()).is_some())
+                .map(|gate| {
+                  println!("Processing {:?}", gate);
+                  let out = gate.operation.process((&self.registers.get(&gate.a).unwrap()).unwrap(), (&self.registers.get(&gate.b).unwrap()).unwrap());
+                  self.registers.entry(gate.output.clone()).and_modify(move |e| *e = Some(out));
+                  gate.value = out;
+                  gate.processed = true;
+                });
+      break;
+      */
+      for gate in &mut self.gates {
+        if gate.processed == false {
+          if let Some(v) = self.registers.get(&gate.a).unwrap() {
+            if let Some(v) = self.registers.get(&gate.b).unwrap() {
+              println!("Processing {:?}", gate);
+              let out = gate.operation.process((&self.registers.get(&gate.a).unwrap()).unwrap(), (&self.registers.get(&gate.b).unwrap()).unwrap());
+              self.registers.entry(gate.output.clone()).and_modify(|e| *e = Some(out));
+              gate.value = out;
+              gate.processed = true;
+            }
+          }
+        }
+      }
+
+    }
+
+  }
 }
