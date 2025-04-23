@@ -8,7 +8,7 @@ pub fn resolve(input_data_path: &str) {
   device.process_until_halt();
   println!("{:?}", device);
 
-  let final_result = 0;
+  let final_result = device.get_final_result();
   println!("Part 1 final result: {}", final_result);
 }
 
@@ -106,5 +106,15 @@ impl Device {
                   }
                 });
     }
+  }
+  fn get_final_result(&self) -> i64 {
+    self.registers.iter()
+                  .filter(|(k, _)| k.starts_with("z"))
+                  .map(|(k, v)| {
+                    let i = String::from_iter(k.chars().skip(1)).parse().unwrap();
+                    let byte_value = v.unwrap() * (2 as i64).pow(i);
+                    byte_value
+                  })
+                  .sum()
   }
 }
