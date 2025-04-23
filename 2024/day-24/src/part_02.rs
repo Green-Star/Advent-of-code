@@ -1,12 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::{HashMap, HashSet}, os::unix::raw::gid_t};
 
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
-  let mut device = transform_data(data);
-  println!("{:?}", device);
-
-  device.process_until_halt();
-  println!("{:?}", device);
+  let device = transform_data(data);
 
   let final_result = device.get_final_result();
   println!("Part 2 final result: {}", final_result);
@@ -52,7 +48,7 @@ fn transform_data(data: Vec<String>) -> Device {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 enum OpCode {
   AND,
   OR,
@@ -88,33 +84,68 @@ struct Device {
   gates: Vec<Gate>,
 }
 impl Device {
-  fn process_until_halt(&mut self) {
-    while self.registers.iter().filter(|(key, _)| key.starts_with("z")).any(|(_, value)| value.is_none()) {
-      self.gates.iter_mut()
-                .filter(|gate| gate.processed == false)
-                .for_each(|gate| {
-                  if let Some(a) = self.registers.get(&gate.a).unwrap() {
-                    if let Some(b) = self.registers.get(&gate.b).unwrap() {
-                      println!("Processing {:?}", gate);
-                      let out = gate.operation.process(a, b);
+  /*
+    1. If the output of a gate is z, then the operation has to be XOR unless it is the last bit.
+    2. If the output of a gate is not z and the inputs are not x, y then it has to be AND / OR gate, but not XOR gate.
+    3. If you have a XOR gate with inputs x, y, there must be another XOR gate with the output of this gate as an input. Search through all gates for an XOR-gate with this gate as an input; if it does not exist, your (original) XOR gate is faulty.
+    4. Similarly, if you have an AND gate, there must be an OR gate with this gate as an input. If that gate doesn’t exist, the original AND gate is faulty.
+    (These don't apply for the gates with input x00, y00).
 
-                      self.registers.entry(gate.output.clone()).and_modify(|e| *e = Some(out));
+  */
+  fn find_swapped(&self) -> Vec<String> {
+    let mut final_bytes: Vec<_> = self.registers.keys().filter(|register| register.starts_with("z")).collect();
+    final_bytes.sort_by(|x, y| y.cmp(x));
+    let final_bit = final_bytes[0];
+    println!("Final bit: {final_bit}");
 
-                      gate.value = out;
-                      gate.processed = true;
-                    }
-                  }
-                });
-    }
+
+    /* 1. If the output of a gate is z, then the operation has to be XOR unless it is the last bit. */
+    let a = self.gates.iter()
+              .filter(|gate| gate.output.starts_with("z"))
+              .filter(|gate| gate.output != *final_bit)
+              .filter(|gate| gate.operation != OpCode::XOR)
+              .collect::<Vec<_>>();
+    println!("A: {:?}", a);
+
+    /* 2. If the output of a gate is not z and the inputs are not x, y then it has to be AND / OR gate, but not XOR gate. */
+    let b = self.gates.iter()
+              .filter(|gate| gate.output.starts_with("z") == false)
+              .filter(|gate| gate.a.starts_with("x") == false && gate.b.starts_with("x") == false)
+              .filter(|gate| gate.a.starts_with("y") == false && gate.b.starts_with("y") == false)
+              .filter(|gate| gate.operation == OpCode::XOR)
+              .collect::<Vec<_>>();
+    println!("B: {:?}", b);
+
+    /* 3. If you have a XOR gate with inputs x, y, there must be another XOR gate with the output of this gate as an input. Search through all gates for an XOR-gate with this gate as an input; if it does not exist, your (original) XOR gate is faulty. */
+    let c= self.gates.iter()
+              .filter(|gate| gate.operation == OpCode::XOR)
+              .filter(|gate| gate.a != "x00" && gate.a != "y00")
+              .filter(|gate| gate.b != "x00" && gate.b != "y00")
+              .filter(|gate| gate.a.starts_with("x") || gate.a.starts_with("y"))
+              .filter(|gate| gate.b.starts_with("x") || gate.b.starts_with("y"))
+              .filter(|gate| (self.gates.iter().filter(|g| g.operation == OpCode::XOR).filter(|g| g.a == gate.output || g.b == gate.output).collect::<Vec<_>>().is_empty()) )
+              .collect::<Vec<_>>();
+    println!("C: {:?}", c);
+
+    /* 4. Similarly, if you have an AND gate, there must be an OR gate with this gate as an input. If that gate doesn’t exist, the original AND gate is faulty. */
+    let d = self.gates.iter()
+              .filter(|gate| gate.operation == OpCode::AND)
+              .filter(|gate| gate.a != "x00" && gate.a != "y00")
+              .filter(|gate| gate.b != "x00" && gate.b != "y00")
+              .filter(|gate| (self.gates.iter().filter(|g| g.operation == OpCode::OR).any(|g| g.a == gate.output || g.b == gate.output)) == false)
+              .collect::<Vec<_>>();
+    println!("D: {:?}", d);
+
+    let result_set = a.iter().chain(b.iter()).chain(c.iter()).chain(d.iter())
+                                          .map(|gate| gate.output.clone())
+                                          .collect::<HashSet<_>>();
+    result_set.into_iter().collect::<Vec<_>>()
   }
-  fn get_final_result(&self) -> i64 {
-    self.registers.iter()
-                  .filter(|(k, _)| k.starts_with("z"))
-                  .map(|(k, v)| {
-                    let i = String::from_iter(k.chars().skip(1)).parse().unwrap();
-                    let byte_value = v.unwrap() * (2 as i64).pow(i);
-                    byte_value
-                  })
-                  .sum()
+
+  fn get_final_result(&self) -> String {
+    /* find swapped ->  sort and join */
+    let mut swapped_gates = self.find_swapped();
+    swapped_gates.sort();
+    swapped_gates.join(",")
   }
 }
