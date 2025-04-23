@@ -1,12 +1,10 @@
-use std::{collections::HashMap, result};
+use std::collections::HashMap;
 
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
   let mut device = transform_data(data);
-  println!("{:?}", device);
 
   device.process_until_halt();
-  println!("{:?}", device);
 
   let final_result = device.get_final_result();
   println!("Part 1 final result: {}", final_result);
