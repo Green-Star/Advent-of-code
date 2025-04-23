@@ -59,7 +59,7 @@ enum OpCode {
   XOR,
 }
 impl OpCode {
-  fn process(&self, x: i64, y: i64) -> i64 {
+  fn process(&self, x: &i64, y: &i64) -> i64 {
     match self {
       &Self::AND => x & y,
       &Self::OR => x | y,
@@ -90,35 +90,21 @@ struct Device {
 impl Device {
   fn process_until_halt(&mut self) {
     while self.registers.iter().filter(|(key, _)| key.starts_with("z")).any(|(_, value)| value.is_none()) {
-      /*
-      println!("Processing...");
-      let _ = self.gates.iter_mut()
+      self.gates.iter_mut()
                 .filter(|gate| gate.processed == false)
-//                .filter(|gate| (&self.registers.get(&gate.a).unwrap()).is_some() && (&self.registers.get(&gate.b).unwrap()).is_some())
-                .map(|gate| {
-                  println!("Processing {:?}", gate);
-                  let out = gate.operation.process((&self.registers.get(&gate.a).unwrap()).unwrap(), (&self.registers.get(&gate.b).unwrap()).unwrap());
-                  self.registers.entry(gate.output.clone()).and_modify(move |e| *e = Some(out));
-                  gate.value = out;
-                  gate.processed = true;
+                .for_each(|gate| {
+                  if let Some(a) = self.registers.get(&gate.a).unwrap() {
+                    if let Some(b) = self.registers.get(&gate.b).unwrap() {
+                      println!("Processing {:?}", gate);
+                      let out = gate.operation.process(a, b);
+
+                      self.registers.entry(gate.output.clone()).and_modify(|e| *e = Some(out));
+
+                      gate.value = out;
+                      gate.processed = true;
+                    }
+                  }
                 });
-      break;
-      */
-      for gate in &mut self.gates {
-        if gate.processed == false {
-          if let Some(v) = self.registers.get(&gate.a).unwrap() {
-            if let Some(v) = self.registers.get(&gate.b).unwrap() {
-              println!("Processing {:?}", gate);
-              let out = gate.operation.process((&self.registers.get(&gate.a).unwrap()).unwrap(), (&self.registers.get(&gate.b).unwrap()).unwrap());
-              self.registers.entry(gate.output.clone()).and_modify(|e| *e = Some(out));
-              gate.value = out;
-              gate.processed = true;
-            }
-          }
-        }
-      }
-
     }
-
   }
 }
