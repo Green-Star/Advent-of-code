@@ -3,8 +3,8 @@ use std::collections::VecDeque;
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
 
-  let size = 70;
-  let mut maze = transform_data(data, 1024, size+1);
+  let size = 6;
+  let mut maze = transform_data(data, 12, size+1);
 
   print_maze(&maze);
 //  maze.explore();
