@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, env::VarError, future::poll_fn};
+use std::collections::VecDeque;
 
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
@@ -82,6 +82,7 @@ impl Grid {
           if current_score < score { return }
           if current_score == score {
             let mut ancestors = self.map[p.x][p.y].ancestors.clone();
+            /* We add ourselves to the ancestors of the next vertice, only if we need to find all the paths to the ending vertice */
             if all_paths {
               ancestors.push(Position { x: vertice.x, y: vertice.y, score });
             }
@@ -98,35 +99,7 @@ impl Grid {
       if let Some(_) = self.map[self.ending_position.0][self.ending_position.1].exploring_score { break }
     }
 
-    println!("EXPLORATION IS FINISHED!");
-
-///    self.map[self.ending_position.0][self.ending_position.1].ancestors.clone()
-
     self.build_return_path(&self.map[self.ending_position.0][self.ending_position.1])
-/*
-    loop {
-
-      if let Some(final_score) = self.map[self.ending_position.0][self.ending_position.1].exploring_score {
-        return self.map[self.ending_position.0][self.ending_position.1].ancestors.clone()
-      }
-
-      self.yet_to_explore.make_contiguous().sort_by(|a, b| a.score.cmp(&b.score));
-      let Some(vertice) = self.yet_to_explore.pop_front() else {
-        return vec![]
-      };
-
-      match self.map[vertice.x][vertice.y].exploring_score {
-        Some(score) => if vertice.score >= score { continue },
-        None => {},
-      }
-      self.map[vertice.x][vertice.y].exploring_score = Some(vertice.score);
-
-      let to_explore = self.get_neighbour_to_explore(&vertice);
-      println!("{:?}", to_explore);
-      to_explore.iter().for_each(|&p| self.yet_to_explore.push_back(p));
-
-    }
-    */
   }
 
   fn build_return_path(&self, current_vertice: &Tile) -> Vec<Position> {
@@ -136,18 +109,6 @@ impl Grid {
     current_vertice.ancestors.iter().for_each(|v| path.append(&mut self.build_return_path(&self.map[v.x][v.y])));
     path
   }
-
-  /*
-  fn build_return_path(&self) -> Vec<Tile> {
-    self.build_return_path_from_vertice(&self.map[self.ending_position.0][self.ending_position.1])
-  }
-  fn build_return_path_from_vertice(&self, vertice: &Tile) -> Vec<Tile> {
-    let mut subpath = vec![ vertice.clone() ];
-
-    vertice.ancestors.iter().for_each(|v| subpath.append(&mut self.build_return_path_from_vertice(v)));
-
-    subpath
-  }*/
 
   fn get_neighbour_to_explore(&self, position: &Position) -> Vec<Position> {
     let mut neighbours = vec![];
@@ -202,19 +163,3 @@ impl Grid {
     }
   }
 }
-
-
-/*
-pub fn resolve_old(input_data_path: &str) {
-  let data = crate::core::load_file_in_memory(input_data_path).unwrap();
-
-  let size = 70;
-  let mut grid = transform_data(data, 1024, size+1);
-
-  let result = grid.explore();
-  grid.print_explored();
-  let final_result = result.unwrap();
-
-  println!("Part 1 final result: {}", final_result);
-}
-*/
