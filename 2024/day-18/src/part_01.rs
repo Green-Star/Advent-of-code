@@ -7,9 +7,7 @@ pub fn resolve(input_data_path: &str) {
   let mut grid = transform_data(data, 1024, size+1);
 
   let result = grid.explore();
-  println!("{:?}", result);
 
-  grid.print_explored();
   let final_result = result.len();
 
   println!("Part 1 final result: {}", final_result);
