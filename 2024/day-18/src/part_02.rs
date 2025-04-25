@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
 
-  let size = 6;
+  let size = 70;
   let mut base_grid = Grid::new_empty(size + 1);
   let mut final_result= "()".to_string();
   for i in data {

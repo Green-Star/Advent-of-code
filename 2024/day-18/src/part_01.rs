@@ -123,17 +123,6 @@ impl Grid {
     neighbours
   }
 
-  fn print(&self) {
-    for i in 0..self.map.len() {
-      for j in 0..self.map[i].len() {
-        match self.map[i][j].content {
-          Some(Content::Wall) => print!("#"),
-          None => print!("."),
-        }
-      }
-      println!("");
-    }
-  }
   fn print_explored(&self) {
     for i in 0..self.map.len() {
       for j in 0..self.map[i].len() {
