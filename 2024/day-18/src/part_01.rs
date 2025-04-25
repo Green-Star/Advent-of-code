@@ -148,16 +148,4 @@ impl Grid {
 
     neighbours
   }
-
-  fn print_explored(&self) {
-    for i in 0..self.map.len() {
-      for j in 0..self.map[i].len() {
-        match self.map[i][j].content {
-          Some(Content::Wall) => print!("#"),
-          None => { if let Some(_) = self.map[i][j].exploring_score { print!("O") } else { print!(".") } },
-        }
-      }
-      println!("");
-    }
-  }
 }
