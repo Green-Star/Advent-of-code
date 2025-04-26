@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
@@ -6,7 +6,7 @@ pub fn resolve(input_data_path: &str) {
 
   maze.race();
 
-  let shortcuts = maze.find_shortcuts(2, 2);
+  let shortcuts = maze.find_shortcuts(20, 50);
   let shortcuts = shortcuts.iter().collect::<HashSet<_>>().into_iter().collect::<Vec<_>>();
   let final_result = shortcuts.len();
 
@@ -48,6 +48,11 @@ enum Content {
 struct Position {
   x: usize,
   y: usize,
+}
+impl Position {
+  fn distance_from(&self, other: Self) -> usize {
+    other.x.abs_diff(self.x) + other.y.abs_diff(self.y)
+  }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -93,24 +98,28 @@ impl Race {
   }
 
 
-  fn find_shortcuts(&self, shortcut_duration: isize, at_least: i64) -> Vec<Shortcut> {
-    let mut shortcuts = vec![];
+  fn find_shortcuts(&self, shortcut_duration: usize, at_least: i64) -> Vec<Shortcut> {
+    let mut tile_list = HashMap::new();
+    self.map.iter()
+            .for_each(|x| x.iter()
+                                      .filter_map(|t| if let Some(_) = t.racing_score { Some(t) } else { None })
+                                      .for_each(|t| { tile_list.insert(t.position, t.racing_score.unwrap()); })
+                      );
 
-    for x in 0..self.map.len() {
-      for y in 0..self.map[x].len() {
-        match self.map[x][y].content {
-          Some(_) => continue,
-          None => {},
-        }
-        let position = Position { x, y };
-        shortcuts.append(&mut self.find_shortcut_from_tile(position, shortcut_duration, at_least));
-      }
-    }
-
+    let shortcuts =
+      tile_list.iter()
+              .flat_map(|(origin, origin_score)| {
+                    tile_list.iter()
+                            .filter(|(position, _)| origin.distance_from(**position) <= shortcut_duration)
+                            .filter(|(position, score)| at_least <= *score - *origin_score - (origin.distance_from(**position) as i64))
+                            .map(|(position, score)| Shortcut { start_position: *origin, end_position: *position, score: *score - *origin_score - (origin.distance_from(*position) as i64) })
+                            .collect::<Vec<_>>()
+              })
+              .collect::<Vec<_>>();
     shortcuts
   }
 
-  fn find_shortcut_from_tile(&self, position: Position, shortcut_duration: isize, at_least: i64) -> Vec<Shortcut> {
+  fn _find_shortcut_from_tile(&self, position: Position, _shortcut_duration: usize, at_least: i64) -> Vec<Shortcut> {
     vec![(-1, 0), (1, 0), (0, -1), (0, 1)].iter().filter_map(|(offset_x, offset_y)| {
       let (Some(x), Some(y)) = (position.x.checked_add_signed(*offset_x), position.y.checked_add_signed(*offset_y)) else { return None };
       if x >= self.map.len() { return None }
@@ -133,85 +142,6 @@ impl Race {
 
       None
     }).collect()
-
-    /*
-    let mut shortcuts = vec![];
-
-    for offset_x in -shortcut_duration..=shortcut_duration {
-      for offset_y in -shortcut_duration..=shortcut_duration {
-        let duration = offset_x.abs() + offset_y.abs();
-        if duration > shortcut_duration { continue }
-
-        let Some(x) = position.x.checked_add_signed(offset_x) else { continue };
-        let Some(y) = position.y.checked_add_signed(offset_y) else { continue };
-        if x >= self.map.len() { continue }
-        if y >= self.map[x].len() { continue }
-        match self.map[x][y].content {
-          Some(_) => continue,
-          None => {},
-        }
-
-        let diff = (self.map[x][y].racing_score.unwrap()-1) - (self.map[position.x][position.y].racing_score.unwrap()-1);
-        if at_least <= diff /*&& diff != (duration as i64)*/ {
-          println!("({},{}) -> ({},{}) : {} to {} (diff {})", position.x, position.y, x, y, self.map[position.x][position.y].racing_score.unwrap(), self.map[x][y].racing_score.unwrap(), diff);
-          shortcuts.push(Shortcut { start_position: position, end_position: Position { x, y }, score: diff })
-        }
-      }
-    }
-
-    shortcuts
-    */
-  }
-
-  /*
-  fn find_shortcut_from_tile(&self, position: Position, shortcut_duration: isize, at_least: i64) -> Vec<Shortcut> {
-    let mut shortcuts = vec![];
-
-    for offset_x in -shortcut_duration..=shortcut_duration {
-      for offset_y in -shortcut_duration..=shortcut_duration {
-        let duration = offset_x.abs() + offset_y.abs();
-        if duration > shortcut_duration { continue }
-
-        let Some(x) = position.x.checked_add_signed(offset_x) else { continue };
-        let Some(y) = position.y.checked_add_signed(offset_y) else { continue };
-        if x >= self.map.len() { continue }
-        if y >= self.map[x].len() { continue }
-        match self.map[x][y].content {
-          Some(_) => continue,
-          None => {},
-        }
-
-        let diff = (self.map[x][y].racing_score.unwrap()-1) - (self.map[position.x][position.y].racing_score.unwrap()-1);
-        if at_least <= diff /*&& diff != (duration as i64)*/ {
-          println!("({},{}) -> ({},{}) : {} to {} (diff {})", position.x, position.y, x, y, self.map[position.x][position.y].racing_score.unwrap(), self.map[x][y].racing_score.unwrap(), diff);
-          shortcuts.push(Shortcut { start_position: position, end_position: Position { x, y }, score: diff })
-        }
-      }
-    }
-
-    shortcuts
-  }
-  */
-
-
-  fn print(&self) {
-    for x in 0..self.map.len() {
-      for y in 0..self.map[x].len() {
-        let position = Position { x, y };
-        if self.racer.position == position {
-          print!("0");
-        } else if let Some(_) = self.map[x][y].content {
-          print!("#");
-        } else if let Some(_) = self.map[x][y].racing_score {
-          print!("O");
-        } else if position == self.ending_position {
-          print!("E");
-        } else {
-          print!(".");
-        }
-      }
-      println!();
-    }
   }
 }
 
