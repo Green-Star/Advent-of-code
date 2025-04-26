@@ -1,34 +1,33 @@
-use std::collections::VecDeque;
-
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
   let mut maze = transform_data(data);
 
-  maze.explore();
-  print_explored_maze(&maze);
+  maze.race();
+  maze.print();
 
-  if let Some(final_result) = maze.map[maze.ending_position.0][maze.ending_position.1].exploring_score {
+  if let Some(final_result) = maze.map[maze.ending_position.x][maze.ending_position.y].racing_score {
     println!("Part 1 final result: {}", final_result);
   } else {
     println!("No result!");
   }
 }
 
-fn transform_data(data: Vec<String>) -> Maze {
+fn transform_data(data: Vec<String>) -> Race {
   let mut map = vec![];
-  let mut ending_position = (0, 0);
-  let mut explorer = VecDeque::new();
-  let mut x = 0;
+  let mut ending_position = Position { x: 0, y: 0 };
+  let mut racer = Racer { position: ending_position, score: 0 };
 
+  let mut x = 0;
   for s in data {
     let mut line = vec![];
     let mut y = 0;
     for c in s.chars() {
+      let position = Position { x, y };
       match c {
-        '#' => { line.push(Tile { content: Some(Content::Wall), exploring_score: None }); },
-        'E' => { line.push(Tile { content: None, exploring_score: None }); ending_position = (x, y); },
-        'S' => { line.push(Tile { content: None, exploring_score: None }); explorer.push_back(Explorer { position: (x, y), direction: Direction::East, exploring_score: 0 }); },
-        _ => { line.push(Tile { content: None, exploring_score: None }); }
+        '#' => { line.push(Tile { position, content: Some(Content::Wall), racing_score: None }); },
+        'E' => { line.push(Tile { position, content: None, racing_score: None }); ending_position = Position {x, y}; },
+        'S' => { line.push(Tile { position, content: None, racing_score: None }); racer = Racer { position: position, score: 0 }; },
+        _ => { line.push(Tile { position, content: None, racing_score: None }); }
       }
       y += 1;
     }
@@ -36,9 +35,10 @@ fn transform_data(data: Vec<String>) -> Maze {
     x += 1;
   }
 
-  Maze { map, ending_position, yet_to_explore: explorer }
+  Race { map, ending_position, racer }
 }
 
+/*
 fn print_explored_maze(maze: &Maze) {
   for i in 0..maze.map.len() {
     for j in 0..maze.map[i].len() {
@@ -92,6 +92,7 @@ impl Direction {
     (new_direction, new_direction.offset())
   }
 }
+*/
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 enum Content {
@@ -99,19 +100,108 @@ enum Content {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
+struct Position {
+  x: usize,
+  y: usize,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
 struct Tile {
+  position: Position,
   content: Option<Content>,
-  exploring_score: Option<i32>,
+  racing_score: Option<i64>,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+struct Racer {
+  position: Position,
+  score: i64,
 }
 
 #[derive(Debug, Clone)]
-struct Maze {
+struct Race {
   map: Vec<Vec<Tile>>,
-  ending_position: (usize, usize),
-
-  yet_to_explore: VecDeque<Explorer>,
+  ending_position: Position,
+  racer: Racer,
 }
-impl Maze {
+impl Race {
+  fn race(&mut self) {
+    while self.racer.position != self.ending_position {
+      self.map[self.racer.position.x][self.racer.position.y].racing_score = Some(self.racer.score);
+      self.racer.position = self.get_next_tile().unwrap().position;
+      self.racer.score += 1;
+    }
+    self.map[self.racer.position.x][self.racer.position.y].racing_score = Some(self.racer.score);
+  }
+
+  fn get_next_tile(&self) -> Option<Tile> {
+    vec![(-1, 0), (1, 0), (0, -1), (0, 1)].iter().filter_map(|offset| {
+      if let (Some(x), Some(y)) = (self.racer.position.x.checked_add_signed(offset.0), self.racer.position.y.checked_add_signed(offset.1)) {
+        if self.check_next_tile_to_race(x, y) { return Some(self.map[x][y]) }
+      }
+      None
+    }).take(1).last()
+
+
+
+
+    /*
+    vec![(-1, 0), (1, 0), (0, -1), (0, 1)].iter();
+
+    if let (Some(x), Some(y)) = (self.racer.position.x.checked_add_signed(1), self.racer.position.y.checked_add_signed(-1)) {
+      if self.check_next_tile_to_race(x, y) { return Some(self.map[x][y]) }
+    }
+    None
+    */
+
+/*
+    if let Some(x) = self.racer.position.x.checked_add_signed(-1) {
+      let y = self.racer.position.y;
+      if self.check_next_tile_to_race(x, y) { return Some(self.map[x][y]) }
+    }
+
+    let x = self.racer.position.x + 1;
+    let y = self.racer.position.y;
+    if self.check_next_tile_to_race(x, y) { return Some(self.map[x][y]) }
+
+    let x = self.racer.position.x;
+    if let Some(y) = self.racer.position.y.checked_add_signed(-1) {
+      if self.check_next_tile_to_race(x, y) { return Some(self.map[x][y]) }
+
+    }
+
+    let x = self.racer.position.x;
+    let y = self.racer.position.y + 1;
+    if self.check_next_tile_to_race(x, y) { return Some(self.map[x][y]) }
+
+    None
+  */
+  }
+  fn check_next_tile_to_race(&self, x: usize, y: usize) -> bool {
+    self.map[x][y].content.is_none() && self.map[x][y].racing_score.is_none()
+  }
+
+  fn print(&self) {
+    for x in 0..self.map.len() {
+      for y in 0..self.map[x].len() {
+        let position = Position { x, y };
+        if self.racer.position == position {
+          print!("0");
+        } else if let Some(_) = self.map[x][y].content {
+          print!("#");
+        } else if let Some(_) = self.map[x][y].racing_score {
+          print!("O");
+        } else if position == self.ending_position {
+          print!("E");
+        } else {
+          print!(".");
+        }
+      }
+      println!();
+    }
+  }
+
+  /*
   fn explore(&mut self) {
     /* I will do sort of a Dijkstra algorithm here */
     loop {
@@ -184,8 +274,10 @@ impl Maze {
     }
     */
   }
+  */
 }
 
+/*
 fn print_exploring(maze: &Maze, explorer: &Explorer) {
   println!("Current exploration: {} - {:?}", explorer.exploring_score, maze.map[maze.ending_position.0][maze.ending_position.1].exploring_score);
   for i in 0..maze.map.len() {
@@ -234,3 +326,4 @@ impl Explorer {
     Explorer { direction: new_direction, position: new_position, exploring_score: new_exploring_score }
   }
 }
+*/
