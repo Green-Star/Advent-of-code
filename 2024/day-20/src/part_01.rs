@@ -3,13 +3,11 @@ pub fn resolve(input_data_path: &str) {
   let mut maze = transform_data(data);
 
   maze.race();
-  maze.print();
 
-  if let Some(final_result) = maze.map[maze.ending_position.x][maze.ending_position.y].racing_score {
-    println!("Part 1 final result: {}", final_result);
-  } else {
-    println!("No result!");
-  }
+  let shortcuts = maze.find_shortcuts(2, 2);
+  let final_result = shortcuts.len();
+
+  println!("Part 1 final result: {}", final_result);
 }
 
 fn transform_data(data: Vec<String>) -> Race {
@@ -37,62 +35,6 @@ fn transform_data(data: Vec<String>) -> Race {
 
   Race { map, ending_position, racer }
 }
-
-/*
-fn print_explored_maze(maze: &Maze) {
-  for i in 0..maze.map.len() {
-    for j in 0..maze.map[i].len() {
-      match maze.map[i][j].content {
-        Some(Content::Wall) => print!("[ # ]"),
-        None => {
-          match maze.map[i][j].exploring_score {
-            Some(score) => print!("[{:03}]", score),
-            None => print!("[   ]"),
-          }
-        }
-      }
-    }
-    println!("");
-  }
-}
-
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-enum Direction {
-  North,
-  East,
-  South,
-  West,
-}
-impl Direction {
-  fn offset(&self) -> (isize, isize) {
-    match self {
-      Self::North => { (-1, 0) },
-      Self::East => { (0, 1) },
-      Self::South => { (1, 0) },
-      Self::West => { (0, -1) },
-    }
-  }
-  fn turn_left(&self) -> (Direction, (isize, isize)) {
-    let new_direction = match self {
-        Self::North => Self::East,
-        Self::East => Self::South,
-        Self::South => Self::West,
-        Self::West => Self::North,
-      };
-    (new_direction, new_direction.offset())
-  }
-  fn turn_right(&self) -> (Direction, (isize, isize)) {
-    let new_direction = match self {
-      Self::North => Self::West,
-      Self::East => Self::North,
-      Self::South => Self::East,
-      Self::West => Self::South,
-    };
-    (new_direction, new_direction.offset())
-  }
-}
-*/
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 enum Content {
@@ -141,189 +83,62 @@ impl Race {
       }
       None
     }).take(1).last()
-
-
-
-
-    /*
-    vec![(-1, 0), (1, 0), (0, -1), (0, 1)].iter();
-
-    if let (Some(x), Some(y)) = (self.racer.position.x.checked_add_signed(1), self.racer.position.y.checked_add_signed(-1)) {
-      if self.check_next_tile_to_race(x, y) { return Some(self.map[x][y]) }
-    }
-    None
-    */
-
-/*
-    if let Some(x) = self.racer.position.x.checked_add_signed(-1) {
-      let y = self.racer.position.y;
-      if self.check_next_tile_to_race(x, y) { return Some(self.map[x][y]) }
-    }
-
-    let x = self.racer.position.x + 1;
-    let y = self.racer.position.y;
-    if self.check_next_tile_to_race(x, y) { return Some(self.map[x][y]) }
-
-    let x = self.racer.position.x;
-    if let Some(y) = self.racer.position.y.checked_add_signed(-1) {
-      if self.check_next_tile_to_race(x, y) { return Some(self.map[x][y]) }
-
-    }
-
-    let x = self.racer.position.x;
-    let y = self.racer.position.y + 1;
-    if self.check_next_tile_to_race(x, y) { return Some(self.map[x][y]) }
-
-    None
-  */
   }
+
   fn check_next_tile_to_race(&self, x: usize, y: usize) -> bool {
     self.map[x][y].content.is_none() && self.map[x][y].racing_score.is_none()
   }
 
-  fn print(&self) {
+
+  fn find_shortcuts(&self, shortcut_duration: isize, at_least: i64) -> Vec<Shortcut> {
+    let mut shortcuts = vec![];
+
     for x in 0..self.map.len() {
       for y in 0..self.map[x].len() {
+        match self.map[x][y].content {
+          Some(_) => continue,
+          None => {},
+        }
         let position = Position { x, y };
-        if self.racer.position == position {
-          print!("0");
-        } else if let Some(_) = self.map[x][y].content {
-          print!("#");
-        } else if let Some(_) = self.map[x][y].racing_score {
-          print!("O");
-        } else if position == self.ending_position {
-          print!("E");
-        } else {
-          print!(".");
+        shortcuts.append(&mut self.find_shortcut_from_tile(position, shortcut_duration, at_least));
+      }
+    }
+
+    shortcuts
+  }
+
+  fn find_shortcut_from_tile(&self, position: Position, shortcut_duration: isize, at_least: i64) -> Vec<Shortcut> {
+    let mut shortcuts = vec![];
+
+    for offset_x in -shortcut_duration..=shortcut_duration {
+      for offset_y in -shortcut_duration..=shortcut_duration {
+        let duration = offset_x.abs() + offset_y.abs();
+        if duration > shortcut_duration { continue }
+
+        let Some(x) = position.x.checked_add_signed(offset_x) else { continue };
+        let Some(y) = position.y.checked_add_signed(offset_y) else { continue };
+        if x >= self.map.len() { continue }
+        if y >= self.map[x].len() { continue }
+        match self.map[x][y].content {
+          Some(_) => continue,
+          None => {},
         }
-      }
-      println!();
-    }
-  }
 
-  /*
-  fn explore(&mut self) {
-    /* I will do sort of a Dijkstra algorithm here */
-    loop {
-      self.yet_to_explore.make_contiguous().sort_by(|a, b| a.exploring_score.cmp(&b.exploring_score));
-      match self.yet_to_explore.pop_front() {
-        /* Grab the closest from start yet-to-explore path (filled with the starting tile at beginning) and explore it straight ahead */
-        Some(e) => self.explore_path(e),
-        /* If there isn't any path to explore, we're finished */
-        None => break,
-      }
-    }
-  }
-
-  /* Explore one path, straight ahead, recording all connected paths to it */
-  fn explore_path(&mut self, e: Explorer) {
-    /* Explore the current tile: */
-    /* If the tile have already been explored by another path which was closer of the starting tile: stop here (we're not on the shortest path - no need to go further) */
-    match self.map[e.position.0][e.position.1].exploring_score {
-      Some(score) => if e.exploring_score > score { return },
-      None => {},
-    }
-    /* Record the exploring score on the tile */
-    self.map[e.position.0][e.position.1].exploring_score = Some(e.exploring_score);
-
-    /* If we already found a path to the end of the maze, and this tile is already beyond this distance, stop here (we're already too far) */
-    /* Note that this way, we'll stop as soon as we reach the ending tile */
-    match self.map[self.ending_position.0][self.ending_position.1].exploring_score {
-      Some(score) => if e.exploring_score >= score { return },
-      None => {},
-    }
-
-    /* Let's check the other vertices on this tile */
-    for d in vec![Direction::North, Direction::East, Direction::West, Direction::South] {
-      let (next_x, next_y) = (e.position.0.checked_add_signed(d.offset().0).unwrap(), e.position.1.checked_add_signed(d.offset().1).unwrap());
-      match self.map[next_x][next_y].content {
-        None => self.yet_to_explore.push_back(Explorer { direction: e.direction, position: (next_x, next_y), exploring_score: e.exploring_score + 1 }),
-        _ => {}
-      }
-    }
-/*
-    let (north_x, north_y) =
-
-    /* For both left and right, if there is another path starting from this tile (i.e. the tile on the left - or right - is not a wall), record it the yet-to-explore vector */
-    let left = e.turn_left();
-    match self.map[left.position.0][left.position.1].content {
-      None => self.yet_to_explore.push_back(left),
-      _ => {},
-    }
-    let right = e.turn_right();
-    match self.map[right.position.0][right.position.1].content {
-      None => self.yet_to_explore.push_back(right),
-      _ => {},
-    }
-
-    /* And now, let's focus on our path... */
-    let next_position = (e.position.0.checked_add_signed(e.direction.offset().0).unwrap(), e.position.1.checked_add_signed(e.direction.offset().1).unwrap());
-    /* Check next tile: */
-    let move_on = {
-      match self.map[next_position.0][next_position.1].content {
-        Some(Content::Wall) => false,
-        None => true,
-      }
-    };
-    if move_on {
-      /* If we can go onto this straight line, let's move on by going one tile forward */
-      self.explore_path(Explorer { direction: e.direction, position: next_position, exploring_score: e.exploring_score + 1 });
-    } else {
-      /* If we're heading to the wall, then stop here, and add 1000 to the exploring score of the tile (because we'll have to turn on this tile) */
-      self.map[e.position.0][e.position.1].exploring_score = Some(e.exploring_score + 1000);
-    }
-    */
-  }
-  */
-}
-
-/*
-fn print_exploring(maze: &Maze, explorer: &Explorer) {
-  println!("Current exploration: {} - {:?}", explorer.exploring_score, maze.map[maze.ending_position.0][maze.ending_position.1].exploring_score);
-  for i in 0..maze.map.len() {
-    for j in 0..maze.map[i].len() {
-      if (explorer.position.0, explorer.position.1) == (i, j) {
-        match explorer.direction {
-          Direction::North => print!("^"),
-          Direction::East => print!(">"),
-          Direction::South => print!("v"),
-          Direction::West => print!("<"),
-        }
-      } else if (maze.ending_position.0, maze.ending_position.1) == (i, j) {
-          print!("E");
-      } else {
-        match maze.map[i][j].content {
-          Some(Content::Wall) => print!("#"),
-          None => { if let Some(_) = maze.map[i][j].exploring_score { print!("X"); } else { print!("."); }},
+        let diff = self.map[x][y].racing_score.unwrap() - self.map[position.x][position.y].racing_score.unwrap();
+        if at_least <= diff && diff != (duration as i64) {
+          shortcuts.push(Shortcut { start_position: position, end_position: Position { x, y }, score: diff })
         }
       }
     }
-    println!("");
+
+    shortcuts
   }
-  println!("{:?}", maze.yet_to_explore);
-  println!("");
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-struct Explorer {
-  position: (usize, usize),
-  direction: Direction,
-  exploring_score: i32,
+struct Shortcut {
+  start_position: Position,
+  end_position: Position,
+  score: i64,
 }
-impl Explorer {
-  fn turn_left(&self) -> Explorer {
-    let (new_direction, offset) = self.direction.turn_left();
-    let new_position = (self.position.0.checked_add_signed(offset.0).unwrap(), self.position.1.checked_add_signed(offset.1).unwrap()); // Being optimistic here: no check for limitations
-    let new_exploring_score = self.exploring_score + 1000 + 1;
 
-    Explorer { direction: new_direction, position: new_position, exploring_score: new_exploring_score }
-  }
-  fn turn_right(&self) -> Explorer {
-    let (new_direction, offset) = self.direction.turn_right();
-    let new_position = (self.position.0.checked_add_signed(offset.0).unwrap(), self.position.1.checked_add_signed(offset.1).unwrap()); // Being optimistic here: no check for limitations
-    let new_exploring_score = self.exploring_score + 1000 + 1;
-
-    Explorer { direction: new_direction, position: new_position, exploring_score: new_exploring_score }
-  }
-}
-*/
