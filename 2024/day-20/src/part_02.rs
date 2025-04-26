@@ -6,7 +6,7 @@ pub fn resolve(input_data_path: &str) {
 
   maze.race();
 
-  let shortcuts = maze.find_shortcuts(20, 50);
+  let shortcuts = maze.find_shortcuts(20, 100);
   let shortcuts = shortcuts.iter().collect::<HashSet<_>>().into_iter().collect::<Vec<_>>();
   let final_result = shortcuts.len();
 
@@ -106,9 +106,14 @@ impl Race {
                                       .for_each(|t| { tile_list.insert(t.position, t.racing_score.unwrap()); })
                       );
 
+    let nb_tile = tile_list.len();
+
     let shortcuts =
       tile_list.iter()
-              .flat_map(|(origin, origin_score)| {
+              .enumerate()
+              .flat_map(|(i, (origin, origin_score))| {
+                    println!("Testing {i}/{nb_tile}");
+
                     tile_list.iter()
                             .filter(|(position, _)| origin.distance_from(**position) <= shortcut_duration)
                             .filter(|(position, score)| at_least <= *score - *origin_score - (origin.distance_from(**position) as i64))
