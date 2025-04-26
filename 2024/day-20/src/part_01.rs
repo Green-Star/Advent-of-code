@@ -1,10 +1,13 @@
+use std::collections::HashSet;
+
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
   let mut maze = transform_data(data);
 
   maze.race();
 
-  let shortcuts = maze.find_shortcuts(2, 2);
+  let shortcuts = maze.find_shortcuts(2, 100);
+  let shortcuts = shortcuts.iter().collect::<HashSet<_>>().into_iter().collect::<Vec<_>>();
   let final_result = shortcuts.len();
 
   println!("Part 1 final result: {}", final_result);
@@ -41,7 +44,7 @@ enum Content {
   Wall,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 struct Position {
   x: usize,
   y: usize,
@@ -107,35 +110,33 @@ impl Race {
     shortcuts
   }
 
-  fn find_shortcut_from_tile(&self, position: Position, shortcut_duration: isize, at_least: i64) -> Vec<Shortcut> {
-    let mut shortcuts = vec![];
-
-    for offset_x in -shortcut_duration..=shortcut_duration {
-      for offset_y in -shortcut_duration..=shortcut_duration {
-        let duration = offset_x.abs() + offset_y.abs();
-        if duration > shortcut_duration { continue }
-
-        let Some(x) = position.x.checked_add_signed(offset_x) else { continue };
-        let Some(y) = position.y.checked_add_signed(offset_y) else { continue };
-        if x >= self.map.len() { continue }
-        if y >= self.map[x].len() { continue }
-        match self.map[x][y].content {
-          Some(_) => continue,
-          None => {},
-        }
-
-        let diff = self.map[x][y].racing_score.unwrap() - self.map[position.x][position.y].racing_score.unwrap();
-        if at_least <= diff && diff != (duration as i64) {
-          shortcuts.push(Shortcut { start_position: position, end_position: Position { x, y }, score: diff })
-        }
+  fn find_shortcut_from_tile(&self, position: Position, _shortcut_duration: isize, at_least: i64) -> Vec<Shortcut> {
+    vec![(-1, 0), (1, 0), (0, -1), (0, 1)].iter().filter_map(|(offset_x, offset_y)| {
+      let (Some(x), Some(y)) = (position.x.checked_add_signed(*offset_x), position.y.checked_add_signed(*offset_y)) else { return None };
+      if x >= self.map.len() { return None }
+      if y >= self.map[x].len() { return None }
+      match self.map[x][y].content {
+        None => { return None },
+        Some(_) => {},
       }
-    }
 
-    shortcuts
+      let (Some(x), Some(y)) = (x.checked_add_signed(*offset_x), y.checked_add_signed(*offset_y)) else { return None };
+      if x >= self.map.len() { return None }
+      if y >= self.map[x].len() { return None }
+      match self.map[x][y].content {
+        Some(_) => { return None },
+        None => {
+          let diff = self.map[x][y].racing_score.unwrap() - self.map[position.x][position.y].racing_score.unwrap() - 2;
+          if at_least <= diff { return Some(Shortcut { start_position: position, end_position: Position { x, y }, score: diff }) }
+        },
+      }
+
+      None
+    }).collect()
   }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 struct Shortcut {
   start_position: Position,
   end_position: Position,
