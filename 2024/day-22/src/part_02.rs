@@ -120,15 +120,15 @@ impl SecretRainbow {
     }
   }
 
-  fn get_final_secret(&mut self, secret: i64) -> i64 {
+  fn _get_final_secret(&mut self, secret: i64) -> i64 {
     let mut result = secret;
     for _ in 1..=2000 {
       result = self.get_next_secret(result);
     }
     result
   }
-  fn get_all_final_secrets(&mut self, secrets: Vec<i64>) -> Vec<i64> {
-    secrets.iter().map(|secret| self.get_final_secret(*secret)).collect()
+  fn _get_all_final_secrets(&mut self, secrets: Vec<i64>) -> Vec<i64> {
+    secrets.iter().map(|secret| self._get_final_secret(*secret)).collect()
   }
 }
 
@@ -208,9 +208,9 @@ mod tests {
   fn final_secret_rainbow() {
     let mut rainbow = SecretRainbow::new();
 
-    assert_eq!(rainbow.get_final_secret(1), 8685429);
-    assert_eq!(rainbow.get_final_secret(10), 4700978);
-    assert_eq!(rainbow.get_final_secret(100), 15273692);
-    assert_eq!(rainbow.get_final_secret(2024), 8667524);
+    assert_eq!(rainbow._get_final_secret(1), 8685429);
+    assert_eq!(rainbow._get_final_secret(10), 4700978);
+    assert_eq!(rainbow._get_final_secret(100), 15273692);
+    assert_eq!(rainbow._get_final_secret(2024), 8667524);
   }
 }
