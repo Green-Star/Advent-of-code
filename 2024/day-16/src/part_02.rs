@@ -6,11 +6,11 @@ pub fn resolve(input_data_path: &str) {
 
   maze.explore();
   let r =  maze.find_best_path();
-  println!("{:?}", r);
-  print_explored_maze(&maze);
+//  println!("{:?}", r);
+//  print_explored_maze(&maze);
 //  println!("*****");
-  print_best_path(&maze);
-  let final_result: usize = maze.map.iter().map(|v| v.iter().filter(|t| t.is_best).collect::<Vec<&Tile>>()).map(|fv| fv.len()).sum();
+//  print_best_path(&maze);
+//  let final_result: usize = maze.map.iter().map(|v| v.iter().filter(|t| t.is_best).collect::<Vec<&Tile>>()).map(|fv| fv.len()).sum();
 
   let final_result = r.len();
 
@@ -164,7 +164,7 @@ impl Maze {
 
   /* Explore one path, straight ahead, recording all connected paths to it */
   fn explore_path(&mut self, e: Explorer) {
-    println!("Explorer: {:?}", e);
+//    println!("Explorer: {:?}", e);
 //    println!("{:?}", self.explorer_done);
 
     /* Explorer already done, stop immediately */
@@ -319,7 +319,7 @@ impl Maze {
     self.follow_best_path(&index).into_iter().collect::<HashSet<_>>().into_iter().collect::<Vec<_>>()
   }
   fn follow_best_path(&self, index: &(usize, usize)) -> Vec<Tile> {
-    println!("Bets path: {:?}", index);
+//    println!("Bets path: {:?}", index);
     let mut path = vec![ self.map[index.0][index.1].clone() ];
     for p in self.map[index.0][index.1].neighbours.iter().collect::<Vec<_>>() {
       path.append(&mut self.follow_best_path(p));
