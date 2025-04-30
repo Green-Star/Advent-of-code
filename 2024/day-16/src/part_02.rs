@@ -12,6 +12,8 @@ pub fn resolve(input_data_path: &str) {
   print_best_path(&maze);
   let final_result: usize = maze.map.iter().map(|v| v.iter().filter(|t| t.is_best).collect::<Vec<&Tile>>()).map(|fv| fv.len()).sum();
 
+  let final_result = r.len();
+
   println!("Part 2 final result: {} (> 521)", final_result);
 }
 
@@ -77,18 +79,25 @@ impl Direction {
   }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 enum Content {
   Wall,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct Tile {
   content: Option<Content>,
   exploring_score: Option<(i32, Direction)>,
   is_best: bool,
 
   neighbours: HashSet<(usize, usize)>
+}
+impl Hash for Tile {
+  fn hash<H: Hasher> (&self, state: &mut H) {
+    self.content.hash(state);
+    self.exploring_score.hash(state);
+    self.is_best.hash(state);
+  }
 }
 impl Tile {
   fn get_leveled_score(&self, other_explorer: &Explorer) -> i32 {
@@ -301,16 +310,17 @@ impl Maze {
     ***/
   }
 
-  fn find_best_path(&mut self) -> Vec<&Tile> {
+  fn find_best_path(&mut self) -> Vec<Tile> {
     /* Good thing, we did a Dijkstra algorithm to find the shortest path between starting and ending points */
     /* Thus, we already know the best path(s): simply start from the ending position and reverse the path (following decreasing exploring_score) until we reach the starting point (which has exploring score 0) */
     let index = (self.ending_position.0, self.ending_position.1);
     // TODO
 
-    self.follow_best_path(&index)
+    self.follow_best_path(&index).into_iter().collect::<HashSet<_>>().into_iter().collect::<Vec<_>>()
   }
-  fn follow_best_path(&self, index: &(usize, usize)) -> Vec<&Tile> {
-    let mut path = vec![];
+  fn follow_best_path(&self, index: &(usize, usize)) -> Vec<Tile> {
+    println!("Bets path: {:?}", index);
+    let mut path = vec![ self.map[index.0][index.1].clone() ];
     for p in self.map[index.0][index.1].neighbours.iter().collect::<Vec<_>>() {
       path.append(&mut self.follow_best_path(p));
     }
