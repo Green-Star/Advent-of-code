@@ -1,11 +1,12 @@
-use std::collections::{HashSet, VecDeque};
+use std::{collections::{HashSet, VecDeque}, hash::{Hash, Hasher}};
 
 pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
   let mut maze = transform_data(data);
 
   maze.explore();
-  maze.find_best_path();
+  let r =  maze.find_best_path();
+  println!("{:?}", r);
   print_explored_maze(&maze);
 //  println!("*****");
   print_best_path(&maze);
@@ -89,6 +90,43 @@ struct Tile {
 
   neighbours: HashSet<(usize, usize)>
 }
+impl Tile {
+  fn get_leveled_score(&self, other_explorer: &Explorer) -> i32 {
+    let (score, direction) = self.exploring_score.unwrap();
+
+    match direction {
+      Direction::North => {
+        match other_explorer.direction {
+          Direction::North => { score },
+          Direction::East | Direction::West => { score + 1000 },
+          Direction::South => { score },
+        }
+      },
+      Direction::East => {
+        match other_explorer.direction {
+          Direction::East => { score },
+          Direction::North | Direction::South => { score + 1000 },
+          Direction::West => { score },
+        }
+      },
+      Direction::South => {
+        match other_explorer.direction {
+          Direction::South => { score },
+          Direction::West | Direction::East => { score + 1000 },
+          Direction::North => { score },
+        }
+
+      },
+      Direction::West => {
+        match other_explorer.direction {
+          Direction::West => { score },
+          Direction::North | Direction::South => { score + 1000 },
+          Direction::East => { score + 0 },
+        }
+      },
+    }
+  }
+}
 
 #[derive(Debug, Clone)]
 struct Maze {
@@ -100,21 +138,26 @@ struct Maze {
 }
 impl Maze {
   fn explore(&mut self) {
+    let mut i = 0;
     /* I will do sort of a Dijkstra algorithm here */
     loop {
       self.yet_to_explore.make_contiguous().sort_by(|a, b| a.exploring_score.cmp(&b.exploring_score));
       match self.yet_to_explore.pop_front() {
         /* Grab the closest from start yet-to-explore path (filled with the starting tile at beginning) and explore it straight ahead */
-        Some(e) => { println!("Explorer: {:?}", e); self.explore_path(e) },
+        Some(e) => self.explore_path(e),
         /* If there isn't any path to explore, we're finished */
         None => break,
       }
+//      println!("{} explorers", self.yet_to_explore.len());
     }
   }
 
 
   /* Explore one path, straight ahead, recording all connected paths to it */
   fn explore_path(&mut self, e: Explorer) {
+    println!("Explorer: {:?}", e);
+//    println!("{:?}", self.explorer_done);
+
     /* Explorer already done, stop immediately */
     if self.explorer_done.insert(e) == false { return }
 
@@ -149,7 +192,23 @@ impl Maze {
       Some((score, direction)) => {
         /* A REPRENDRE, JE CROIS QUE J'AI TOUT FAIT A L'ENVERS!!!  */
 
+        let leveled_score = self.map[next.position.0][next.position.1].get_leveled_score(&e);
 
+        /* If we're above the shortest score, then there is another shortest path to this tile and we stop here */
+        if leveled_score < next.exploring_score { return }
+        /* If we equal the shortest score, then have to record ourself as one the closest neighbour of the tile */
+        if leveled_score == next.exploring_score {
+          self.map[next_position.0][next_position.1].neighbours.insert(e.position);
+        }
+        /* If we're below the shortest score, we found a shortest path leading to this tile */
+          /* => Update the score of this tile and record ourself as the only closest neighbour */
+        if leveled_score > next.exploring_score {
+          self.map[next.position.0][next.position.1].exploring_score = Some((next.exploring_score, next.direction));
+          self.map[next.position.0][next.position.1].neighbours = HashSet::new();
+          self.map[next.position.0][next.position.1].neighbours.insert(e.position);
+        }
+
+        /*
         /* 1. We're above the shortest path to this tile */
         /*  => Stop here, there's nothing left to on this tile */
         if next.exploring_score > score { return }
@@ -158,18 +217,19 @@ impl Maze {
         /* Let's leveled our score compare to the record shortest path */
         let leveled_score = next.get_leveled_score(direction);
         /* If we're above the shortest score, then there is another shortest path to this tile and we stop here */
-        if leveled_score > score { return }
+        if leveled_score < next.exploring_score { return }
         /* If we equal the shortest score, then have to record ourself as one the closest neighbour of the tile */
-        if leveled_score == score {
+        if leveled_score == next.exploring_score {
           self.map[next_position.0][next_position.1].neighbours.insert(e.position);
         }
         /* If we're below the shortest score, we found a shortest path leading to this tile */
           /* => Update the score of this tile and record ourself as the only closest neighbour */
-        if leveled_score < score {
+        if leveled_score > next.exploring_score {
           self.map[next.position.0][next.position.1].exploring_score = Some((next.exploring_score, next.direction));
           self.map[next.position.0][next.position.1].neighbours = HashSet::new();
           self.map[next.position.0][next.position.1].neighbours.insert(e.position);
         }
+        */
       },
 
       /* 3. No score: the tile wasn't explored yet, */
@@ -241,11 +301,20 @@ impl Maze {
     ***/
   }
 
-  fn find_best_path(&mut self) {
+  fn find_best_path(&mut self) -> Vec<&Tile> {
     /* Good thing, we did a Dijkstra algorithm to find the shortest path between starting and ending points */
     /* Thus, we already know the best path(s): simply start from the ending position and reverse the path (following decreasing exploring_score) until we reach the starting point (which has exploring score 0) */
     let index = (self.ending_position.0, self.ending_position.1);
     // TODO
+
+    self.follow_best_path(&index)
+  }
+  fn follow_best_path(&self, index: &(usize, usize)) -> Vec<&Tile> {
+    let mut path = vec![];
+    for p in self.map[index.0][index.1].neighbours.iter().collect::<Vec<_>>() {
+      path.append(&mut self.follow_best_path(p));
+    }
+    path
   }
 
 /***
@@ -343,7 +412,7 @@ fn print_explored_maze(maze: &Maze) {
   println!("{:?}", maze.map[pos.0][pos.1]);
 }
 
-#[derive(Debug, Copy, Clone, Eq, Hash)]
+#[derive(Debug, Copy, Clone, Eq)]
 struct Explorer {
   position: (usize, usize),
   direction: Direction,
@@ -352,6 +421,12 @@ struct Explorer {
 impl PartialEq for Explorer {
   fn eq(&self, other: &Self) -> bool {
       self.position == other.position && self.direction == other.direction
+  }
+}
+impl Hash for Explorer {
+  fn hash<H: Hasher> (&self, state: &mut H) {
+    self.position.hash(state);
+    self.direction.hash(state);
   }
 }
 impl Explorer {
