@@ -157,7 +157,7 @@ impl Maze {
   }
 }
 
-fn print_exploring(maze: &Maze, explorer: &Explorer) {
+fn _print_exploring(maze: &Maze, explorer: &Explorer) {
   println!("Current exploration: {} - {:?}", explorer.exploring_score, maze.map[maze.ending_position.0][maze.ending_position.1].exploring_score);
   for i in 0..maze.map.len() {
     for j in 0..maze.map[i].len() {

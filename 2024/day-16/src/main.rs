@@ -10,7 +10,7 @@ fn main() {
   let elapsed: std::time::Duration = now.elapsed();
   println!("Part 1 found in {:?}s", elapsed.as_secs());
   let now = Instant::now();
-  part_02::resolve("./test-2.data");
+  part_02::resolve("FAILED :(");
   let elapsed = now.elapsed();
   println!("Part 2 found in {:?}s", elapsed.as_secs());
 }
