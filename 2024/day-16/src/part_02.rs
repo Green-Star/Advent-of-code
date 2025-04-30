@@ -7,14 +7,15 @@ pub fn resolve(input_data_path: &str) {
   maze.explore();
   let r =  maze.find_best_path();
 //  println!("{:?}", r);
-//  print_explored_maze(&maze);
-//  println!("*****");
-//  print_best_path(&maze);
-//  let final_result: usize = maze.map.iter().map(|v| v.iter().filter(|t| t.is_best).collect::<Vec<&Tile>>()).map(|fv| fv.len()).sum();
+  print_explored_maze(&maze);
+  //  println!("*****");
+  print_best_path(&maze);
+  pretty_print_explored_maze(&maze);
+  let final_result: usize = maze.map.iter().map(|v| v.iter().filter(|t| t.is_best).collect::<Vec<&Tile>>()).map(|fv| fv.len()).sum();
 
-  let final_result = r.len();
+//  let final_result = r.len();
 
-  println!("Part 2 final result: {} (> 521)", final_result);
+  println!("Part 2 final result: {} (521 < [538] < 560)", final_result);
 }
 
 fn transform_data(data: Vec<String>) -> Maze {
@@ -199,14 +200,15 @@ impl Maze {
     match self.map[next.position.0][next.position.1].exploring_score {
     /*  3 possibilites here: */
       Some((score, direction)) => {
-        /* A REPRENDRE, JE CROIS QUE J'AI TOUT FAIT A L'ENVERS!!!  */
-
         let leveled_score = self.map[next.position.0][next.position.1].get_leveled_score(&e);
 
         /* If we're above the shortest score, then there is another shortest path to this tile and we stop here */
         if leveled_score < next.exploring_score { return }
         /* If we equal the shortest score, then have to record ourself as one the closest neighbour of the tile */
         if leveled_score == next.exploring_score {
+          /* Yet another check: if the other is going straighforward, we're are on a useless turn, so dont't record ourself */
+          let next_step_short_path = &self.map[next.position.0.checked_add_signed(direction.offset().0).unwrap()][next.position.1.checked_add_signed(direction.offset().1).unwrap()];
+
           self.map[next_position.0][next_position.1].neighbours.insert(e.position);
         }
         /* If we're below the shortest score, we found a shortest path leading to this tile */
@@ -310,6 +312,7 @@ impl Maze {
     ***/
   }
 
+  /*
   fn find_best_path(&mut self) -> Vec<Tile> {
     /* Good thing, we did a Dijkstra algorithm to find the shortest path between starting and ending points */
     /* Thus, we already know the best path(s): simply start from the ending position and reverse the path (following decreasing exploring_score) until we reach the starting point (which has exploring score 0) */
@@ -318,14 +321,50 @@ impl Maze {
 
     self.follow_best_path(&index).into_iter().collect::<HashSet<_>>().into_iter().collect::<Vec<_>>()
   }
-  fn follow_best_path(&self, index: &(usize, usize)) -> Vec<Tile> {
+  fn follow_best_path(&mut self, index: &(usize, usize)) -> Vec<Tile> {
 //    println!("Bets path: {:?}", index);
     let mut path = vec![ self.map[index.0][index.1].clone() ];
-    for p in self.map[index.0][index.1].neighbours.iter().collect::<Vec<_>>() {
+    for p in &self.map[index.0][index.1].neighbours.iter().collect::<Vec<_>>() {
       path.append(&mut self.follow_best_path(p));
     }
     path
   }
+
+  fn find_best_path(&mut self) -> Vec<Tile> {
+    /* Good thing, we did a Dijkstra algorithm to find the shortest path between starting and ending points */
+    /* Thus, we already know the best path(s): simply start from the ending position and reverse the path (following decreasing exploring_score) until we reach the starting point (which has exploring score 0) */
+    let index = (self.ending_position.0, self.ending_position.1);
+    // TODO
+
+    self.follow_best_path(&index).into_iter().collect::<HashSet<_>>().into_iter().collect::<Vec<_>>()
+  }
+  fn follow_best_path(&mut self, index: &(usize, usize)) -> Vec<Tile> {
+//    println!("Bets path: {:?}", index);
+    let mut path = vec![ self.map[index.0][index.1].clone() ];
+    for p in &self.map[index.0][index.1].neighbours.iter().collect::<Vec<_>>() {
+      path.append(&mut self.follow_best_path(p));
+    }
+    path
+  }
+*/
+
+fn find_best_path(&mut self) {
+  /* Good thing, we did a Dijkstra algorithm to find the shortest path between starting and ending points */
+  /* Thus, we already know the best path(s): simply start from the ending position and reverse the path (following decreasing exploring_score) until we reach the starting point (which has exploring score 0) */
+  let index = (self.ending_position.0, self.ending_position.1);
+  // TODO
+
+  self.follow_best_path(&index);
+}
+fn follow_best_path(&mut self, index: &(usize, usize)) {
+  self.map[index.0][index.1].is_best = true;
+  let next = self.map[index.0][index.1].neighbours.clone();
+
+  for p in next {
+    self.follow_best_path(&p);
+  }
+}
+
 
 /***
   fn find_best_path(&mut self) {
@@ -402,11 +441,11 @@ fn print_explored_maze(maze: &Maze) {
   for i in 0..maze.map.len() {
     for j in 0..maze.map[i].len() {
       match maze.map[i][j].content {
-        Some(Content::Wall) => print!("[  #  ]"),
+        Some(Content::Wall) => print!("[####]"),
         None => {
           match maze.map[i][j].exploring_score {
-            Some((score, _)) => print!("[{:05}]", score),
-            None => print!("[     ]"),
+            Some((score, _)) => print!("[{:04}]", score),
+            None => print!("[    ]"),
           }
         }
       }
@@ -420,6 +459,24 @@ fn print_explored_maze(maze: &Maze) {
   println!("{:?}", maze.map[pos.0][pos.1]);
   let pos = maze.map[pos.0][pos.1].neighbours.iter().collect::<Vec<_>>()[0];
   println!("{:?}", maze.map[pos.0][pos.1]);
+}
+
+fn pretty_print_explored_maze(maze: &Maze) {
+  for i in 0..maze.map.len() {
+    for j in 0..maze.map[i].len() {
+      match maze.map[i][j].content {
+        Some(Content::Wall) => print!("[#####]"),
+        None => {
+          if maze.map[i][j].is_best {
+            print!("[{:05}]", maze.map[i][j].exploring_score.unwrap().0);
+          } else {
+            print!("[     ]")
+          }
+        }
+      }
+    }
+    println!("");
+  }
 }
 
 #[derive(Debug, Copy, Clone, Eq)]
