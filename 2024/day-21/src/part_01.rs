@@ -95,7 +95,61 @@ fn get_next_sequence(key: &String, hashmap: &mut HashMap<String, String>) -> Str
   }
 }
 fn compute_next_value(s: &String) -> String {
-  "v<<A".to_string()
+  let keypad = DirectionalKeypad::create_directional_keypad();
+
+  /* Robot sequences always start on A */
+  let mut current = keypad.get(&'A').unwrap();
+
+  let mut sequence = String::new();
+  for c in s.chars() {
+    let destination = keypad.get(&c).unwrap();
+
+    let offset_x = destination.x.abs_diff(current.x);
+    let offset_y = destination.y.abs_diff(current.y);
+
+    let mut horizontal = String::new();
+    for _ in 0..offset_x {
+      if destination.x >= current.x {
+        horizontal.push('>');
+      } else {
+        horizontal.push('<');
+      }
+    }
+    let mut vertical = String::new();
+    for _ in 0..offset_y {
+      if destination.y >= current.y {
+        vertical.push('^');
+      } else {
+        vertical.push('v');
+      }
+    }
+
+    /* Direction priorities:
+      1. Moving with least turns
+      2. Then, inside a move:
+        < before
+        ^ before
+        v before
+        >
+    */
+    if current.x == 0 && destination.y == 1 {
+      sequence.push_str(&horizontal);
+      sequence.push_str(&vertical);
+    } else if current.y == 1 && destination.x == 0 {
+      sequence.push_str(&vertical);
+      sequence.push_str(&horizontal);
+    } else if current.x < destination.x {
+      sequence.push_str(&horizontal);
+      sequence.push_str(&vertical);
+    } else if current.x >= destination.x {
+      sequence.push_str(&vertical);
+      sequence.push_str(&horizontal);
+    }
+
+    sequence.push('A');
+    current = destination;
+  }
+  sequence
 }
 
 
