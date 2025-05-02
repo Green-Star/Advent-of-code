@@ -95,6 +95,8 @@ fn get_next_sequence(key: &String, hashmap: &mut HashMap<String, String>) -> Str
   }
 }
 fn compute_next_value(s: &String) -> String {
+
+    /*
   let keypad = DirectionalKeypad::create_directional_keypad();
 
   /* Robot sequences always start on A */
@@ -146,11 +148,80 @@ fn compute_next_value(s: &String) -> String {
       sequence.push_str(&horizontal);
     }
 
+
+    sequence.push('A');
+    current = destination;
+  }
+  sequence
+  */
+
+  let keypad = DirectionalKeypad::create_directional_keypad();
+
+  /* Robot sequences always start on A */
+  let mut current = 'A';
+
+  let mut sequence = String::new();
+  for destination in s.chars() {
+
+    /*
+        +---+---+
+        | ^ | A |
+    +---+---+---+
+    | < | v | > |
+    +---+---+---+
+
+    Direction priorities:
+      1. Moving with least turns
+      2. Then, inside a move:
+          you always want to hit the far left key first (<), and then the middle key (^ or v) and then a right column key (> or A)
+    */
+    if current == 'A' {
+      if destination == '^' { sequence.push_str("<") }
+      else if destination == '<' { sequence.push_str("v<<") }
+//      else if destination == '<' { sequence.push_str("<v<") }
+      else if destination == 'v' { sequence.push_str("<v") }
+      else if destination == '>' {sequence.push_str("v") }
+    } else if current == '^' {
+      if destination == 'A' { sequence.push_str(">") }
+      else if destination == '<' { sequence.push_str("v<") }
+      else if destination == 'v' { sequence.push_str("v") }
+      else if destination == '>' { sequence.push_str("v>") }
+    } else if current == '<' {
+      if destination == '^' { sequence.push_str(">^") }
+      else if destination == 'A' { sequence.push_str(">>^") }
+      else if destination == 'v' { sequence.push_str(">") }
+      else if destination == '>' { sequence.push_str(">>") }
+    /*
+        +---+---+
+        | ^ | A |
+    +---+---+---+
+    | < | v | > |
+    +---+---+---+
+
+    Direction priorities:
+      1. Moving with least turns
+      2. Then, inside a move:
+          you always want to hit the far left key first (<), and then the middle key (^ or v) and then a right column key (> or A)
+    */
+    } else if current == 'v' {
+      if destination == '^' { sequence.push_str("^")  }
+      else if destination == 'A' { sequence.push_str("^>") }
+      else if destination == '<' { sequence.push_str("<") }
+      else if destination == '>' { sequence.push_str(">") }
+    } else if current == '>' {
+      if destination == '^' { sequence.push_str("<^") }
+      else if destination == 'A' { sequence.push_str("^") }
+      else if destination == '<' { sequence.push_str("<<") }
+      else if destination == 'v' { sequence.push_str("<") }
+    }
+
     sequence.push('A');
     current = destination;
   }
   sequence
 }
+
+
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -218,22 +289,41 @@ mod tests {
   #[test]
   fn test_extract_code_2() {
     assert_eq!(get_numeric_code(&"980A".to_string()), 980);
-    assert_eq!(37, 37);
   }
   #[test]
   fn test_extract_code_3() {
     assert_eq!(get_numeric_code(&"179A".to_string()), 179);
-    assert_eq!(37, 37);
   }
   #[test]
   fn test_extract_code_4() {
     assert_eq!(get_numeric_code(&"456A".to_string()), 456);
-    assert_eq!(37, 37);
   }
   #[test]
   fn test_extract_code_5() {
     assert_eq!(get_numeric_code(&"379A".to_string()), 379);
   }
+
+  #[test]
+  fn test_sequence_1() {
+    assert_eq!(get_shortest_sequence(&"029A".to_string(), 2), "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A");
+  }
+  #[test]
+  fn test_sequence_2() {
+    assert_eq!(get_shortest_sequence(&"980A".to_string(), 2), "<v<A>>^AAAvA^A<vA<AA>>^AvAA<^A>A<v<A>A>^AAAvA<^A>A<vA>^A<A>A");
+  }
+  #[test]
+  fn test_sequence_3() {
+    assert_eq!(get_shortest_sequence(&"179A".to_string(), 2), "<v<A>>^A<vA<A>>^AAvAA<^A>A<v<A>>^AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A");
+  }
+  #[test]
+  fn test_sequence_4() {
+    assert_eq!(get_shortest_sequence(&"456A".to_string(), 2), "<v<A>>^AA<vA<A>>^AAvAA<^A>A<vA>^A<A>A<vA>^A<A>A<v<A>A>^AAvA<^A>A");
+  }
+  #[test]
+  fn test_sequence_5() {
+    assert_eq!(get_shortest_sequence(&"379A".to_string(), 2), "<v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A");
+  }
+
   #[test]
   fn shortest_sequence_1() {
     assert_eq!(get_shortest_sequence(&"029A".to_string(), 2).len(), 68);
@@ -243,7 +333,32 @@ mod tests {
     assert_eq!(get_shortest_sequence(&"980A".to_string(), 2).len(), 60);
   }
   #[test]
+  fn shortest_sequence_3() {
+    assert_eq!(get_shortest_sequence(&"179A".to_string(), 2).len(), 68);
+  }
+  #[test]
+  fn shortest_sequence_4() {
+    assert_eq!(get_shortest_sequence(&"456A".to_string(), 2).len(), 64);
+  }
+  #[test]
+  fn shortest_sequence_5() {
+    assert_eq!(get_shortest_sequence(&"379A".to_string(), 2).len(), 64);
+  }
+
+  #[test]
   fn numeric_keypad_sequence() {
     assert_eq!(get_sequence_for_numeric_keypad(&"029A".to_string()), "<A^A>^^AvvvA");
+  }
+  #[test]
+  fn numeric_and_directional_keypad_sequence_step_0() {
+    assert_eq!(get_shortest_sequence(&"029A".to_string(), 0), "<A^A>^^AvvvA");
+  }
+  #[test]
+  fn numeric_and_directional_keypad_sequence_step_1() {
+    assert_eq!(get_shortest_sequence(&"029A".to_string(), 1), "v<<A>>^A<A>AvA<^AA>A<vAAA>^A");
+  }
+  #[test]
+  fn numeric_and_directional_keypad_sequence_step_2() {
+    assert_eq!(get_shortest_sequence(&"029A".to_string(), 2), "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A");
   }
 }
