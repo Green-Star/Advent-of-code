@@ -4,7 +4,7 @@ pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
   /* Believe it or not, but no transform_data today */
 
-  let final_result: u128 = data.iter().map(|s| (get_numeric_code(s), get_shortest_sequence(s, 25))).map(|(code, sequence)| (code as u128) * (sequence as u128)).sum();
+  let final_result: i64 = data.iter().map(|s| (get_numeric_code(s), get_shortest_sequence(s, 25))).map(|(code, sequence)| code * (sequence as i64)).sum();
   println!("Part 2 final result: {}", final_result);
 }
 
@@ -25,31 +25,14 @@ fn get_shortest_sequence(code: &String, robots: u64) -> usize {
         .fold(0, |acc, (from, to)| acc + get_min_length_sequence(0, from, to, robots, &numeric_keypad, &mut cache))
 }
 
-fn get_sequences(code: &String, robots: u64) -> Vec<String> {
-  let mut sequence = get_sequence_for_numeric_keypad(code);
-
-  for _ in 1..=robots {
-    let mut next = vec![];
-    for s in sequence {
-      next.push(get_sequence_for_directionnal_keypad(&s));
-    }
-    sequence = next.iter().flatten().map(|s| s.to_owned()).collect();
-  }
-
-  sequence
-}
-
 fn get_min_length_sequence(level: u64, from: char, to: char, max_level: u64, keypad: &Keypad, cache: &mut HashMap<(u64, char, char), usize>) -> usize {
   if let Some(&min) = cache.get(&(level, from, to)) { return min }
 
-//  println!("Level:{level}, ({from}->{to})");
-//  println!("Level:{level}, ({from}->{to}) => [{:?}]", keypad.get_paths(from, to));
   let directional_keypad = Keypad::from(DirectionalKeypad::create_keypad());
 
   let shortest_sequence = keypad.get_paths(from, to)
                                       .iter()
                                       .map(|paths| {
-  //                                      println!("Level:{level}, ({from}->{to})");
                                         if level == max_level { return paths.iter().map(|s| s.len()).min().unwrap() }
 
                                         paths.iter().map(|path| {
@@ -64,18 +47,8 @@ fn get_min_length_sequence(level: u64, from: char, to: char, max_level: u64, key
                                       .unwrap();
 
   cache.insert((level, from, to), shortest_sequence);
-  println!("Shortest sequence for ({from}->{to} at level {level}) is {shortest_sequence}");
   shortest_sequence
 }
-
-fn get_sequence_for_numeric_keypad(code: &String) -> Vec<String> {
-  Keypad::from(NumericKeypad::create_keypad()).get_complete_sequence(code)
-}
-
-fn get_sequence_for_directionnal_keypad(sequence: &String) -> Vec<String> {
-  Keypad::from(DirectionalKeypad::create_keypad()).get_sequence(sequence)
-}
-
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -159,59 +132,6 @@ impl Keypad {
   }
   fn get_paths(&self, from: char, to: char) -> Option<Vec<String>> {
     self.map.get(&(from, to)).cloned()
-  }
-  fn get_complete_sequence(&self, sequence: &String) -> Vec<String> {
-    /* Always start on A */
-    let full_code = "A".to_string() + sequence;
-
-    let zipped = full_code.chars().into_iter().zip(sequence.chars().into_iter());
-    zipped.into_iter()
-          .try_fold(vec![ "".to_string() ], |acc, (from, to)| {
-            self.get_paths(from, to)
-                .map(|next_paths| next_paths.iter()
-                                                        .flat_map(|path| acc.iter()
-                                                                                    .map(|current_path| current_path.to_owned() + path)
-                                                                                    .collect::<Vec<_>>()
-                                                        )
-                                                        .collect()
-                )
-          }).unwrap()
-  }
-
-  fn get_sequence(&self, sequence: &String) -> Vec<String> {
-    /* Always start on A */
-    let full_code = "A".to_string() + sequence;
-
-    let zipped = full_code.chars().into_iter().zip(sequence.chars().into_iter());
-    zipped.into_iter()
-          .try_fold(vec![ "".to_string() ], |acc, (from, to)| {
-            self.get_paths(from, to)
-                .map(|next_paths| next_paths.iter()
-                                                        .flat_map(|path| acc.iter()
-                                                                                    .map(|current_path| current_path.to_owned() + path)
-                                                                                    .collect::<Vec<_>>()
-                                                        )
-                                                        .collect()
-                )
-          }).unwrap()
-  }
-
-  fn get_shortest_sequence_for_char(&self, from: char, to: char, level: usize, max_level: usize, cache: &mut HashMap<(usize, char, char), usize>) -> usize {
-    if let Some(min) = cache.get(&(level, from, to)) { return *min }
-
-    let min_length = self.get_paths(from, to)
-                                              .iter()
-                                              .map(|paths| {
-                                                if level == max_level { return paths[0].len() }
-
-                                                self.get_shortest_sequence_for_char(from, to, level + 1, max_level, cache)
-
-                                              })
-                                              .min()
-                                              .unwrap();
-
-    cache.insert((level, from, to), min_length);
-    min_length
   }
 }
 
@@ -300,22 +220,5 @@ mod tests {
   #[test]
   fn shortest_sequence_5() {
     assert_eq!(get_shortest_sequence(&"379A".to_string(), 2), 64);
-  }
-
-  #[test]
-  fn numeric_keypad_sequence() {
-    assert!(get_sequence_for_numeric_keypad(&"029A".to_string()).contains(&"<A^A>^^AvvvA".to_string()));
-  }
-  #[test]
-  fn numeric_and_directional_keypad_sequence_step_0() {
-    assert!(get_sequences(&"029A".to_string(), 0).contains(&"<A^A>^^AvvvA".to_string()));
-  }
-  #[test]
-  fn numeric_and_directional_keypad_sequence_step_1() {
-    assert!(get_sequences(&"029A".to_string(), 1).contains(&"v<<A>>^A<A>AvA<^AA>A<vAAA>^A".to_string()));
-  }
-  #[test]
-  fn numeric_and_directional_keypad_sequence_step_2() {
-    assert!(get_sequences(&"029A".to_string(), 2).contains(&"<vA<AA>>^AvAA<^A>Av<<A>>^AvA^A<vA>^Av<<A>^A>AAvA^Av<<A>A>^AAAvA<^A>A".to_string()));
   }
 }
