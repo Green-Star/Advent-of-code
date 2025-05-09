@@ -5,13 +5,15 @@ pub fn resolve(input_data_path: &str) {
   let mut maze = transform_data(data);
 
   maze.explore();
-  let r =  maze.find_best_path();
-//  println!("{:?}", r);
   print_explored_maze(&maze);
+  maze.find_best_path();
+  let mut race =  maze.prune_best_path();
+  race.explore_all_best_paths();
+  //  println!("{:?}", r);
   //  println!("*****");
-  print_best_path(&maze);
   pretty_print_explored_maze(&maze);
-  let final_result: usize = maze.map.iter().map(|v| v.iter().filter(|t| t.is_best).collect::<Vec<&Tile>>()).map(|fv| fv.len()).sum();
+  print_best_path(&race);
+  let final_result: usize = race.map.iter().map(|v| v.iter().filter(|t| t.is_best).collect::<Vec<&Tile>>()).map(|fv| fv.len()).sum();
 
 //  let final_result = r.len();
 
@@ -29,10 +31,10 @@ fn transform_data(data: Vec<String>) -> Maze {
     let mut y = 0;
     for c in s.chars() {
       match c {
-        '#' => { line.push(Tile { content: Some(Content::Wall), exploring_score: None, is_best: false, neighbours: HashSet::new() }); },
-        'E' => { line.push(Tile { content: None, exploring_score: None, is_best: true, neighbours: HashSet::new() }); ending_position = (x, y); }, // Note: The ending tile is on the best path by default
-        'S' => { line.push(Tile { content: None, exploring_score: Some((0, Direction::East)), is_best: false, neighbours: HashSet::new() }); explorer.push_back(Explorer { position: (x, y), direction: Direction::East, exploring_score: 0 }); },
-        _ => { line.push(Tile { content: None, exploring_score: None, is_best: false, neighbours: HashSet::new() }); }
+        '#' => { line.push(Tile { content: Some(Content::Wall), exploring_score: None, is_best: false, neighbours: HashSet::new(), next_tile_on_best_path: None }); },
+        'E' => { line.push(Tile { content: None, exploring_score: None, is_best: true, neighbours: HashSet::new(), next_tile_on_best_path: None }); ending_position = (x, y); }, // Note: The ending tile is on the best path by default
+        'S' => { line.push(Tile { content: None, exploring_score: Some((0, Direction::East)), is_best: false, neighbours: HashSet::new(), next_tile_on_best_path: None }); explorer.push_back(Explorer { position: (x, y), direction: Direction::East, exploring_score: 0 }); },
+        _ => { line.push(Tile { content: None, exploring_score: None, is_best: false, neighbours: HashSet::new(), next_tile_on_best_path: None }); }
       }
       y += 1;
     }
@@ -91,7 +93,8 @@ struct Tile {
   exploring_score: Option<(i32, Direction)>,
   is_best: bool,
 
-  neighbours: HashSet<(usize, usize)>
+  neighbours: HashSet<(usize, usize)>,
+  next_tile_on_best_path: Option<(usize, usize)>
 }
 impl Hash for Tile {
   fn hash<H: Hasher> (&self, state: &mut H) {
@@ -165,8 +168,8 @@ impl Maze {
 
   /* Explore one path, straight ahead, recording all connected paths to it */
   fn explore_path(&mut self, e: Explorer) {
-//    println!("Explorer: {:?}", e);
-//    println!("{:?}", self.explorer_done);
+    //    println!("Explorer: {:?}", e);
+    //    println!("{:?}", self.explorer_done);
 
     /* Explorer already done, stop immediately */
     if self.explorer_done.insert(e) == false { return }
@@ -198,57 +201,27 @@ impl Maze {
 
     /* We're on an accessible tile, let's check its score */
     match self.map[next.position.0][next.position.1].exploring_score {
-    /*  3 possibilites here: */
-      Some((score, direction)) => {
-        let leveled_score = self.map[next.position.0][next.position.1].get_leveled_score(&e);
-
-        /* If we're above the shortest score, then there is another shortest path to this tile and we stop here */
-        if leveled_score < next.exploring_score { return }
-        /* If we equal the shortest score, then have to record ourself as one the closest neighbour of the tile */
-        if leveled_score == next.exploring_score {
-          /* Yet another check: if the other is going straighforward, we're are on a useless turn, so dont't record ourself */
-          let next_step_short_path = &self.map[next.position.0.checked_add_signed(direction.offset().0).unwrap()][next.position.1.checked_add_signed(direction.offset().1).unwrap()];
-
-          self.map[next_position.0][next_position.1].neighbours.insert(e.position);
-        }
-        /* If we're below the shortest score, we found a shortest path leading to this tile */
-          /* => Update the score of this tile and record ourself as the only closest neighbour */
-        if leveled_score > next.exploring_score {
-          self.map[next.position.0][next.position.1].exploring_score = Some((next.exploring_score, next.direction));
-          self.map[next.position.0][next.position.1].neighbours = HashSet::new();
-          self.map[next.position.0][next.position.1].neighbours.insert(e.position);
-        }
-
-        /*
-        /* 1. We're above the shortest path to this tile */
-        /*  => Stop here, there's nothing left to on this tile */
-        if next.exploring_score > score { return }
-
-        /* 2. We're below the shortest path to this tile */
-        /* Let's leveled our score compare to the record shortest path */
-        let leveled_score = next.get_leveled_score(direction);
-        /* If we're above the shortest score, then there is another shortest path to this tile and we stop here */
-        if leveled_score < next.exploring_score { return }
-        /* If we equal the shortest score, then have to record ourself as one the closest neighbour of the tile */
-        if leveled_score == next.exploring_score {
-          self.map[next_position.0][next_position.1].neighbours.insert(e.position);
-        }
-        /* If we're below the shortest score, we found a shortest path leading to this tile */
-          /* => Update the score of this tile and record ourself as the only closest neighbour */
-        if leveled_score > next.exploring_score {
-          self.map[next.position.0][next.position.1].exploring_score = Some((next.exploring_score, next.direction));
-          self.map[next.position.0][next.position.1].neighbours = HashSet::new();
-          self.map[next.position.0][next.position.1].neighbours.insert(e.position);
-        }
-        */
-      },
-
-      /* 3. No score: the tile wasn't explored yet, */
+      /* Not explored yet */
       /*  => Simply record ourself as the closest neighbour of the tile and set its score */
       None => {
         self.map[next.position.0][next.position.1].exploring_score = Some((next.exploring_score, next.direction));
         self.map[next.position.0][next.position.1].neighbours = HashSet::new();
         self.map[next.position.0][next.position.1].neighbours.insert(e.position);
+      },
+      /* Already explored */
+      /* We do a simple path search here, so we will keep only one neighbour for each tile */
+      Some((score, direction)) => {
+        let leveled_score = self.map[next.position.0][next.position.1].get_leveled_score(&e);
+
+        /* If we're above (or equal) the shortest score, then there is another shortest path to this tile and we stop here */
+        if leveled_score <= next.exploring_score { return }
+        /* If we're below the shortest score, we found a shortest path leading to this tile */
+          /* => Update the score of this tile and record ourself as the only closest neighbour */
+        if leveled_score > next.exploring_score {
+          self.map[next.position.0][next.position.1].exploring_score = Some((next.exploring_score, next.direction));
+          self.map[next.position.0][next.position.1].neighbours = HashSet::new();
+          self.map[next.position.0][next.position.1].neighbours.insert(e.position);
+        }
       },
     }
 
@@ -259,94 +232,142 @@ impl Maze {
 
     /* Then, let's keep exploring this path (until we reach a wall) */
     self.explore_path(next);
+  }
 
-  /***
 
-  /* Explore one path, straight ahead, recording all connected paths to it */
-  fn explore_path(&mut self, e: Explorer) {
-    /* Explore the current tile: */
-    /* If the tile have already been explored by another path which was closer of the starting tile: stop here (we're not on the shortest path - no need to go further) */
-    match self.map[e.position.0][e.position.1].exploring_score {
-      Some(score) => if e.exploring_score > score { return },
-      None => {},
+
+  fn explore_all_best_paths(&mut self) {
+    let mut i = 0;
+    /* I will do sort of a Dijkstra algorithm here */
+    loop {
+      self.yet_to_explore.make_contiguous().sort_by(|a, b| a.exploring_score.cmp(&b.exploring_score));
+      match self.yet_to_explore.pop_front() {
+        /* Grab the closest from start yet-to-explore path (filled with the starting tile at beginning) and explore it straight ahead */
+        Some(e) => self.find_all_best_paths(e),
+        /* If there isn't any path to explore, we're finished */
+        None => break,
+      }
     }
-    /* Record the exploring score on the tile */
-    self.map[e.position.0][e.position.1].exploring_score = Some(e.exploring_score);
+  }
 
-    /* If we already found a path to the end of the maze, and this tile is already beyond this distance, stop here (we're already too far) */
-    /* Note that this way, we'll stop as soon as we reach the ending tile */
-    match self.map[self.ending_position.0][self.ending_position.1].exploring_score {
-      Some(score) => if e.exploring_score >= score { return },
-      None => {},
-    }
+  fn find_all_best_paths(&mut self, e: Explorer) {
 
-    /* Let's check the other vertices on this tile */
-    /* For both left and right, if there is another path starting from this tile (i.e. the tile on the left - or right - is not a wall), record it the yet-to-explore vector */
+    /* Explorer already done, stop immediately */
+    if self.explorer_done.insert(e) == false { return }
+
     let left = e.turn_left();
-    match self.map[left.position.0][left.position.1].content {
+    // Being optimistic here: no check for limitations
+    match self.map[left.position.0.checked_add_signed(left.direction.offset().0).unwrap()][left.position.1.checked_add_signed(left.direction.offset().1).unwrap()].content {
+      /* There's another path to explore, let's queue it (but don't go on it yet) */
       None => self.yet_to_explore.push_back(left),
       _ => {},
     }
     let right = e.turn_right();
-    match self.map[right.position.0][right.position.1].content {
+    // Being optimistic here: no check for limitations
+    match self.map[right.position.0.checked_add_signed(right.direction.offset().0).unwrap()][right.position.1.checked_add_signed(right.direction.offset().1).unwrap()].content {
+      /* There's another path to explore, let's queue it (but don't gor forward yet) */
       None => self.yet_to_explore.push_back(right),
       _ => {},
     }
 
     /* And now, let's focus on our path... */
+    // Again: no check for limitations
     let next_position = (e.position.0.checked_add_signed(e.direction.offset().0).unwrap(), e.position.1.checked_add_signed(e.direction.offset().1).unwrap());
-    /* Check next tile: */
-    let move_on = {
-      match self.map[next_position.0][next_position.1].content {
-        Some(Content::Wall) => false,
-        None => true,
-      }
-    };
-    if move_on {
-      /* If we can go onto this straight line, let's move on by going one tile forward */
-      self.explore_path(Explorer { direction: e.direction, position: next_position, exploring_score: e.exploring_score + 1 });
-    } else {
-      /* If we're heading to the wall, then stop here, and add 1000 to the exploring score of the tile (because we'll have to turn on this tile) */
-      self.map[e.position.0][e.position.1].exploring_score = Some(e.exploring_score + 1000);
+    /* Bumped into a wall, stop here */
+    if let Some(_) = self.map[next_position.0][next_position.1].content { return }
+
+    let next_direction = e.direction;
+    let next_score = e.exploring_score + 1;
+    let next = Explorer { position: next_position, direction: next_direction, exploring_score: next_score };
+
+    /* If we're exploring the best path, simply push new explorers (do nothing on the already-record best path) */
+    if self.map[e.position.0][e.position.1].is_best {
+      return self.find_all_best_paths(next);
     }
-    ***/
-  }
 
-  /*
-  fn find_best_path(&mut self) -> Vec<Tile> {
-    /* Good thing, we did a Dijkstra algorithm to find the shortest path between starting and ending points */
-    /* Thus, we already know the best path(s): simply start from the ending position and reverse the path (following decreasing exploring_score) until we reach the starting point (which has exploring score 0) */
-    let index = (self.ending_position.0, self.ending_position.1);
-    // TODO
 
-    self.follow_best_path(&index).into_iter().collect::<HashSet<_>>().into_iter().collect::<Vec<_>>()
-  }
-  fn follow_best_path(&mut self, index: &(usize, usize)) -> Vec<Tile> {
-//    println!("Bets path: {:?}", index);
-    let mut path = vec![ self.map[index.0][index.1].clone() ];
-    for p in &self.map[index.0][index.1].neighbours.iter().collect::<Vec<_>>() {
-      path.append(&mut self.follow_best_path(p));
+    /* We're on an accessible tile (which is not on the best path), let's check its score */
+    match self.map[next.position.0][next.position.1].exploring_score {
+      /* No score: the tile wasn't explored yet, */
+      /*  => Simply record ourself as the closest neighbour of the tile and set its score */
+      None => {
+        self.map[next.position.0][next.position.1].exploring_score = Some((next.exploring_score, next.direction));
+        self.map[next.position.0][next.position.1].neighbours = HashSet::new();
+        self.map[next.position.0][next.position.1].neighbours.insert(e.position);
+      },
+      /* Already explored */
+      Some((score, direction)) => {
+        /* Let's check this tile:  */
+        if self.map[next.position.0][next.position.1].is_best {
+          /* We found a best-path tile:  */
+          println!("Colliding with best path at ({:?})", next);
+
+          /* Compute exploring score of this tile */
+          let leveled_score = self.map[next.position.0][next.position.1].get_leveled_score(&e);
+
+          /* If we're above the shortest score, then there is another shortest path to this tile and we stop here */
+          if leveled_score < next.exploring_score { return }
+          /* If we equal the shortest score, check if we're back on the best path (check the distance with the nex best-path tile) */
+          if leveled_score == next.exploring_score {
+            /* Being optimisitic here: admit there isn't two best paths ending on the end vertice */
+            let next_best_path = self.map[next.position.0][next.position.1].next_tile_on_best_path.unwrap();
+            let Some((next_best_score, next_best_direction)) = self.map[next_best_path.0][next_best_path.1].exploring_score else { return };
+
+            /*** Il faut regarder s'il y a un changement de direction entre le next et le best path ***/
+            println!("Checking {:?} != {:?} && {:?} == {:?} && {:?} == {:?}",
+            next_best_direction, direction, e.direction, next_direction, next_best_score, e.exploring_score + 1 + 1);
+            if next_best_direction != direction && e.direction == next_direction && next_best_score == e.exploring_score + 1 + 1 {
+              println!("True");
+              self.map[next_position.0][next_position.1].neighbours.insert(e.position);
+              self.backtrack_best_path(&e.position);
+            }
+
+
+              /*
+            println!("Checking {:?} with {next_best_score}&{:?}", e, direction);
+              let next_best_score = self.map[next_best_path.0][next_best_path.1].get_leveled_score(&e);
+              //if next_best_score == e.exploring_score + 1 + 1 {
+              if e.direction == direction && e.exploring_score + 1 + 1 == next_best_score {
+            println!("Found new best path");
+                self.map[next_position.0][next_position.1].neighbours.insert(e.position);
+                self.backtrack_best_path(&e.position);
+              }
+              */
+          }
+          /* If we're below the shortest score, it's a non-sense */
+          //panic!();
+        } else {
+          /* Compute exploring score of this tile */
+          let leveled_score = self.map[next.position.0][next.position.1].get_leveled_score(&e);
+
+          /* If we're above the shortest score, then there is another shortest path to this tile and we stop here */
+          if leveled_score < next.exploring_score { return }
+          /* If we equal the shortest score, then have to record ourself as one the closest neighbour of the tile */
+          if leveled_score == next.exploring_score {
+            /* Yet another check: if the other is going straighforward, we're are on a useless turn, so dont't record ourself */
+            let next_step_short_path = &self.map[next.position.0.checked_add_signed(direction.offset().0).unwrap()][next.position.1.checked_add_signed(direction.offset().1).unwrap()];
+
+            self.map[next_position.0][next_position.1].neighbours.insert(e.position);
+          }
+          /* If we're below the shortest score, we found a shortest path leading to this tile */
+            /* => Update the score of this tile and record ourself as the only closest neighbour */
+          if leveled_score > next.exploring_score {
+            self.map[next.position.0][next.position.1].exploring_score = Some((next.exploring_score, next.direction));
+            self.map[next.position.0][next.position.1].neighbours = HashSet::new();
+            self.map[next.position.0][next.position.1].neighbours.insert(e.position);
+          }
+        }
+      },
     }
-    path
-  }
 
-  fn find_best_path(&mut self) -> Vec<Tile> {
-    /* Good thing, we did a Dijkstra algorithm to find the shortest path between starting and ending points */
-    /* Thus, we already know the best path(s): simply start from the ending position and reverse the path (following decreasing exploring_score) until we reach the starting point (which has exploring score 0) */
-    let index = (self.ending_position.0, self.ending_position.1);
-    // TODO
-
-    self.follow_best_path(&index).into_iter().collect::<HashSet<_>>().into_iter().collect::<Vec<_>>()
-  }
-  fn follow_best_path(&mut self, index: &(usize, usize)) -> Vec<Tile> {
-//    println!("Bets path: {:?}", index);
-    let mut path = vec![ self.map[index.0][index.1].clone() ];
-    for p in &self.map[index.0][index.1].neighbours.iter().collect::<Vec<_>>() {
-      path.append(&mut self.follow_best_path(p));
+    /* Small optimization, if we're already farther than the end tile, stop here */
+    if let Some((final_score, _)) = self.map[self.ending_position.0][self.ending_position.1].exploring_score {
+      if next.exploring_score > final_score { return }
     }
-    path
+
+    /* Then, let's keep exploring this path (until we reach a wall) */
+    self.find_all_best_paths(next);
   }
-*/
 
 fn find_best_path(&mut self) {
   /* Good thing, we did a Dijkstra algorithm to find the shortest path between starting and ending points */
@@ -357,12 +378,50 @@ fn find_best_path(&mut self) {
   self.follow_best_path(&index);
 }
 fn follow_best_path(&mut self, index: &(usize, usize)) {
+  println!("Best path: ({}, {})", index.0, index.1);
+
   self.map[index.0][index.1].is_best = true;
   let next = self.map[index.0][index.1].neighbours.clone();
 
   for p in next {
+    self.map[p.0][p.1].next_tile_on_best_path = Some(*index);
     self.follow_best_path(&p);
   }
+}
+fn backtrack_best_path(&mut self, index: &(usize, usize)) {
+  if self.map[index.0][index.1].is_best { return }
+
+  self.map[index.0][index.1].is_best = true;
+
+  let next = self.map[index.0][index.1].neighbours.clone();
+  for p in next {
+    self.map[p.0][p.1].next_tile_on_best_path = Some(*index);
+    self.backtrack_best_path(&p);
+  }
+}
+
+fn prune_best_path(&self) -> Self {
+  let mut new = self.clone();
+
+  new.yet_to_explore = VecDeque::new();
+  new.explorer_done = HashSet::new();
+
+  for i in 0..new.map.len() {
+    for j in 0..new.map[i].len() {
+      if new.map[i][j].is_best == false {
+        new.map[i][j].exploring_score = None;
+        new.map[i][j].neighbours = HashSet::new();
+      } else {
+        if let Some((score, _)) = new.map[i][j].exploring_score {
+          if score == 0 {
+            new.yet_to_explore.push_back(Explorer { position: (i, j), direction: Direction::East, exploring_score: 0 })
+          }
+        }
+      }
+    }
+  }
+
+  new
 }
 
 
@@ -459,6 +518,13 @@ fn print_explored_maze(maze: &Maze) {
   println!("{:?}", maze.map[pos.0][pos.1]);
   let pos = maze.map[pos.0][pos.1].neighbours.iter().collect::<Vec<_>>()[0];
   println!("{:?}", maze.map[pos.0][pos.1]);
+/*
+
+  println!("{:?}", maze.map[7][7]);
+  println!("{:?}", maze.map[7][6]);
+  println!("{:?}", maze.map[7][5]);
+  println!("{:?}", maze.map[8][5]);
+  */
 }
 
 fn pretty_print_explored_maze(maze: &Maze) {
