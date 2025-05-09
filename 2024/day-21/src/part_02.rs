@@ -4,7 +4,7 @@ pub fn resolve(input_data_path: &str) {
   let data = crate::core::load_file_in_memory(input_data_path).unwrap();
   /* Believe it or not, but no transform_data today */
 
-  let final_result: i64 = data.iter().map(|s| (get_numeric_code(s), get_shortest_sequence(s, 25))).map(|(code, sequnce)| code * (sequnce as i64)).sum();
+  let final_result: u128 = data.iter().map(|s| (get_numeric_code(s), get_shortest_sequence(s, 25))).map(|(code, sequence)| (code as u128) * (sequence as u128)).sum();
   println!("Part 2 final result: {}", final_result);
 }
 
@@ -15,10 +15,8 @@ fn get_numeric_code(code: &String) -> i64 {
 }
 
 fn get_shortest_sequence(code: &String, robots: u64) -> usize {
-  let mut cache: HashMap<(usize, char, char), usize> = HashMap::new();
+  let mut cache: HashMap<(u64, char, char), usize> = HashMap::new();
   let numeric_keypad = Keypad::from(NumericKeypad::create_keypad());
-
-  let robots = 4;
 
   /* Always start on A */
   let full_code = "A".to_string() + code;
@@ -41,7 +39,7 @@ fn get_sequences(code: &String, robots: u64) -> Vec<String> {
   sequence
 }
 
-fn get_min_length_sequence(level: usize, from: char, to: char, max_level: usize, keypad: &Keypad, cache: &mut HashMap<(usize, char, char), usize>) -> usize {
+fn get_min_length_sequence(level: u64, from: char, to: char, max_level: u64, keypad: &Keypad, cache: &mut HashMap<(u64, char, char), usize>) -> usize {
   if let Some(&min) = cache.get(&(level, from, to)) { return min }
 
 //  println!("Level:{level}, ({from}->{to})");
@@ -52,7 +50,7 @@ fn get_min_length_sequence(level: usize, from: char, to: char, max_level: usize,
                                       .iter()
                                       .map(|paths| {
   //                                      println!("Level:{level}, ({from}->{to})");
-                                        if level == max_level { return paths[0].len() }
+                                        if level == max_level { return paths.iter().map(|s| s.len()).min().unwrap() }
 
                                         paths.iter().map(|path| {
                                           let full_path = "A".to_string() + path;
@@ -66,6 +64,7 @@ fn get_min_length_sequence(level: usize, from: char, to: char, max_level: usize,
                                       .unwrap();
 
   cache.insert((level, from, to), shortest_sequence);
+  println!("Shortest sequence for ({from}->{to} at level {level}) is {shortest_sequence}");
   shortest_sequence
 }
 
