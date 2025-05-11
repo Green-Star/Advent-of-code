@@ -8,6 +8,84 @@ pub fn resolve(input_data_path: &str) {
   println!("Part 1 final result: {}", final_result);
 }
 
+type Lock = (usize, usize, usize, usize, usize);
+type Key = (usize, usize, usize, usize, usize);
+
+fn transform_data(data: Vec<String>) -> (Vec<Lock>, Vec<Key>) {
+  let mut locks = vec![];
+  let mut keys = vec![];
+
+  let mut in_progress = false;
+  let mut is_lock = false;
+  let mut is_key = false;
+
+  let mut pattern = vec![ vec![]; 5 ];
+
+  for line in data {
+    if line.is_empty() {
+      if in_progress {
+        if is_lock {
+          locks.push(create_lock(&pattern));
+        }
+        if is_key {
+          keys.push(create_key(&pattern));
+        }
+      }
+      in_progress = false;
+      is_lock = false;
+      is_key = false;
+      pattern = vec![ vec![]; 5 ];
+    } else {
+      /* First line of a new pattern: compute the pattern type (either '#####' -> Lock or '.....' -> Key) */
+      if in_progress == false {
+        if line == "#####" {
+          is_lock = true;
+        } else if line == "....." {
+          is_key = true;
+        } else {
+          panic!("Unknown pattern!");
+        }
+        in_progress = true;
+      }
+
+      let mut chars = line.chars();
+
+      pattern[0].push(chars.next().unwrap());
+      pattern[1].push(chars.next().unwrap());
+      pattern[2].push(chars.next().unwrap());
+      pattern[3].push(chars.next().unwrap());
+      pattern[4].push(chars.next().unwrap());
+    }
+  }
+  /* Last pattern */
+  if in_progress {
+    if is_lock {
+      locks.push(create_lock(&pattern));
+    }
+    if is_key {
+      keys.push(create_key(&pattern));
+    }
+  }
+
+  (locks, keys)
+}
+fn create_lock(lock: &Vec<Vec<char>>) -> Lock {
+  let summary = lock.iter()
+    .map(|chars| chars.iter().enumerate().rev().find_map(|(index, &c)| if c == '#' { Some(index) } else { None }))
+    .map(|o| o.unwrap())
+    .collect::<Vec<_>>();
+
+  (summary[0], summary[1], summary[2], summary[3], summary[4])
+}
+fn create_key(key: &Vec<Vec<char>>) -> Key {
+  let summary = key.iter()
+    .map(|chars| chars.iter().rev().enumerate().rev().find_map(|(index, &c)| if c == '#' { Some(index) } else { None }))
+    .map(|o| o.unwrap())
+    .collect::<Vec<_>>();
+
+  (summary[0], summary[1], summary[2], summary[3], summary[4])
+}
+
 fn get_numeric_code(code: &String) -> i64 {
   let mut s = code.chars();
   s.next_back();
@@ -189,61 +267,99 @@ mod tests {
   use super::*;
 
   #[test]
-  fn test_extract_code_1() {
-    assert_eq!(get_numeric_code(&"029A".to_string()), 29);
-  }
-  #[test]
-  fn test_extract_code_2() {
-    assert_eq!(get_numeric_code(&"980A".to_string()), 980);
-  }
-  #[test]
-  fn test_extract_code_3() {
-    assert_eq!(get_numeric_code(&"179A".to_string()), 179);
-  }
-  #[test]
-  fn test_extract_code_4() {
-    assert_eq!(get_numeric_code(&"456A".to_string()), 456);
-  }
-  #[test]
-  fn test_extract_code_5() {
-    assert_eq!(get_numeric_code(&"379A".to_string()), 379);
-  }
+  fn test_transform_data() {
+    let data = vec![
+      "#####".to_string(),
+      ".####".to_string(),
+      ".####".to_string(),
+      ".####".to_string(),
+      ".#.#.".to_string(),
+      ".#...".to_string(),
+      ".....".to_string(),
+      "".to_string(),
+      "#####".to_string(),
+      "##.##".to_string(),
+      ".#.##".to_string(),
+      "...##".to_string(),
+      "...#.".to_string(),
+      "...#.".to_string(),
+      ".....".to_string(),
+      "".to_string(),
+      ".....".to_string(),
+      "#....".to_string(),
+      "#....".to_string(),
+      "#...#".to_string(),
+      "#.#.#".to_string(),
+      "#.###".to_string(),
+      "#####".to_string(),
+      "".to_string(),
+      ".....".to_string(),
+      ".....".to_string(),
+      "#.#..".to_string(),
+      "###..".to_string(),
+      "###.#".to_string(),
+      "###.#".to_string(),
+      "#####".to_string(),
+      "".to_string(),
+      ".....".to_string(),
+      ".....".to_string(),
+      ".....".to_string(),
+      "#....".to_string(),
+      "#.#..".to_string(),
+      "#.#.#".to_string(),
+      "#####".to_string(),
+    ];
 
-  #[test]
-  fn shortest_sequence_1() {
-    assert_eq!(get_shortest_sequence(&"029A".to_string(), 2), 68);
-  }
-  #[test]
-  fn shortest_sequence_2() {
-    assert_eq!(get_shortest_sequence(&"980A".to_string(), 2), 60);
-  }
-  #[test]
-  fn shortest_sequence_3() {
-    assert_eq!(get_shortest_sequence(&"179A".to_string(), 2), 68);
-  }
-  #[test]
-  fn shortest_sequence_4() {
-    assert_eq!(get_shortest_sequence(&"456A".to_string(), 2), 64);
-  }
-  #[test]
-  fn shortest_sequence_5() {
-    assert_eq!(get_shortest_sequence(&"379A".to_string(), 2), 64);
-  }
+    let result = (
+      vec![
+        (0, 5, 3, 4, 3),
+        (1, 2, 0, 5, 3),
+      ],
+      vec![
+        (5, 0, 2, 1, 3),
+        (4, 3, 4, 0, 2),
+        (3, 0, 2, 0, 1),
+      ],
+    );
 
-  #[test]
-  fn numeric_keypad_sequence() {
-    assert!(get_sequence_for_numeric_keypad(&"029A".to_string()).contains(&"<A^A>^^AvvvA".to_string()));
+    assert_eq!(transform_data(data), result);
   }
   #[test]
-  fn numeric_and_directional_keypad_sequence_step_0() {
-    assert!(get_sequences(&"029A".to_string(), 0).contains(&"<A^A>^^AvvvA".to_string()));
+  fn test_transfrom_lock() {
+    let data = vec![
+      "#####".to_string(),
+      ".####".to_string(),
+      ".####".to_string(),
+      ".####".to_string(),
+      ".#.#.".to_string(),
+      ".#...".to_string(),
+      ".....".to_string(),
+    ];
+
+    let result = (
+      vec![ (0, 5, 3, 4, 3) ],
+      vec![],
+    );
+
+    assert_eq!(transform_data(data), result);
   }
   #[test]
-  fn numeric_and_directional_keypad_sequence_step_1() {
-    assert!(get_sequences(&"029A".to_string(), 1).contains(&"v<<A>>^A<A>AvA<^AA>A<vAAA>^A".to_string()));
-  }
-  #[test]
-  fn numeric_and_directional_keypad_sequence_step_2() {
-    assert!(get_sequences(&"029A".to_string(), 2).contains(&"<vA<AA>>^AvAA<^A>Av<<A>>^AvA^A<vA>^Av<<A>^A>AAvA^Av<<A>A>^AAAvA<^A>A".to_string()));
+  fn test_transfrom_key() {
+    let data = vec![
+      ".....".to_string(),
+      "#....".to_string(),
+      "#....".to_string(),
+      "#...#".to_string(),
+      "#.#.#".to_string(),
+      "#.###".to_string(),
+      "#####".to_string(),
+    ];
+
+    let result = (
+      vec![],
+      vec![ (5, 0, 2, 1, 3) ],
+    );
+
+    assert_eq!(transform_data(data), result);
   }
 }
