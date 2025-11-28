@@ -1,6 +1,2 @@
-use ::utils::*;
-
-pub fn part_01() {
-    println!("Hello, world!");
-    utils::utils();
-}
+pub mod part_01;
+pub mod part_02;
