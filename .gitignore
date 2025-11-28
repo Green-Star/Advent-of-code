@@ -1,3 +1,5 @@
 **/target
 *.data
+*/**/.vscode
+2024/day-14/images
 
