@@ -1,6 +1,6 @@
-use ::utils::*;
+use utils::core::*;
 
 pub fn part_01() {
     println!("Hello, world!");
-    utils::utils();
+    say_hello();
 }

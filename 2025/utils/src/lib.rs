@@ -1,15 +1,11 @@
-pub mod utils {
-
-    pub fn utils() {
-        println!("Hello, world in utils!");
-    }
-
-}
-
 pub mod core {
 
     use std::fs::File;
     use std::io::{BufRead, BufReader};
+
+    pub fn say_hello() {
+        println!("Hello world from the utils!");
+    }
 
     pub fn load_file_in_memory(filepath: &str) -> std::io::Result<Vec<String>> {
         let file = File::open(filepath)?;

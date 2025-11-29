@@ -1,7 +1,5 @@
-use ::utils::*;
-
 pub fn resolve() -> i32 {
-    utils::utils();
+    utils::core::say_hello();
 
     10
 }
