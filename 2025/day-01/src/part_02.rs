@@ -23,10 +23,6 @@ fn similarity_score(x: &i32, vec: &Vec<i32>) -> i32 {
     x * (occurences as i32)
 }
 
-fn distance(a: &i32, b: &i32) -> i32 {
-    (b - a).abs()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
