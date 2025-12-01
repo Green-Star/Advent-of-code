@@ -96,10 +96,6 @@ pub mod core {
         parse_number_list_with_separator(s, "|")
     }
 
-    pub fn parse() -> i32 {
-        5
-    }
-
 }
 
 

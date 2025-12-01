@@ -36,28 +36,6 @@ fn get_next_value(acc: (i32, i32), offset: &i32) -> (i32, i32) {
     (next, count + full_rotation + going_through_0)
 }
 
-/*
-fn get_next_value(acc: (i32, i32), offset: &i32) -> (i32, i32) {
-    let (start, count) = acc;
-
-    if offset >= &0 {
-        let x = start + offset;
-        (x.rem_euclid(100), count + x.div_euclid(100))
-    } else {
-        let next = (start + offset).rem_euclid(100);
-        (next, count)
-    }
-/*
-    let next = (start + offset).rem_euclid(100);
-    if next == 0 {
-        (next, count + 1)
-    } else {
-        (next, count)
-    }
-    */
-}
-*/
-
 #[cfg(test)]
 mod tests {
     use super::*;
