@@ -29,17 +29,11 @@ fn get_next_value(acc: (i32, i32), offset: &i32) -> (i32, i32) {
 
     /* Get the final position of the dial and check if we point to 0 to reach it (note: if we started on 0, there is no click to add) */
     let finish = start + offset;
-    let going_through_0 = if start > 0 && finish > 100 { 1 } else if start > 0 && finish < 0 { 1 } else { 0 };
+    let going_through_0 = if start > 0 && finish >= 100 { 1 } else if start > 0 && finish <= 0 { 1 } else { 0 };
 
     /* Finally, get the next value */
-    /* If we ended the rotation on 0, count this click as well */
     let next = (start + offset).rem_euclid(100);
-    if next == 0 {
-        (next, count + full_rotation + going_through_0 + 1)
-    }
-    else {
-        (next, count + full_rotation + going_through_0)
-    }
+    (next, count + full_rotation + going_through_0)
 }
 
 /*
@@ -185,11 +179,14 @@ L82
 
     #[test]
     fn test_full_rotation_02() {
-        assert_eq!(get_next_value((0, 0), &1000), (50, 10));
-        assert_eq!(get_next_value((0, 0), &-1000), (50, 10));
+        assert_eq!(get_next_value((0, 0), &100), (0, 1));
+        assert_eq!(get_next_value((0, 0), &-100), (0, 1));
 
-        assert_eq!(get_next_value((0, 0), &1000), (50, 10));
-        assert_eq!(get_next_value((0, 10), &-1000), (50, 20));
+        assert_eq!(get_next_value((0, 0), &1000), (0, 10));
+        assert_eq!(get_next_value((0, 0), &-1000), (0, 10));
+
+        assert_eq!(get_next_value((0, 0), &1000), (0, 10));
+        assert_eq!(get_next_value((0, 10), &-1000), (0, 20));
     }
 
     #[test]
