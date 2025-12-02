@@ -36,30 +36,43 @@ trait ID {
     fn is_invalid_id(&self) -> bool
     where Self: std::fmt::Display {
         let self_string = format!("{self}");
-        let (left, right) = self_string.split_at(self_string.len() / 2);
-        left == right
+        for i in 2..=self_string.len() {
+            let v = split_in_multiple_string(&self_string, i);
+            if check_if_all_substrings_are_equal(v) { return true }
+        }
+        false
     }
-    fn is_valid_id(&self) -> bool
+    fn _is_valid_id(&self) -> bool
     where Self: std::fmt::Display {
         !self.is_invalid_id()
     }
 }
 impl ID for i64 {}
 
+fn split_in_multiple_string(s: &str, nb_output_strings: usize) -> Vec<Option<&str>> {
+    /* If s cannot be equally divide in nb_output_strings, return nothing */
+    if s.len() % nb_output_strings != 0 { return vec![ None ] }
+
+    /* Otherise, split s in nb_output_strings (each with the same number of chars) */
+    let mut substrings = vec![];
+
+    let substring_length = s.len() / nb_output_strings;
+    let mut offset = 0;
+
+    while offset < s.len() {
+        substrings.push(s.get(offset..offset + substring_length));
+        offset += substring_length;
+    }
+
+    substrings
+}
+fn check_if_all_substrings_are_equal(substrings: Vec<Option<&str>>) -> bool {
+    substrings.iter().all(|o| o.is_some()) && substrings.windows(2).all(|w| w[0] == w[1])
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn get_expected_data() -> Vec<Range> {
-        vec![ Range { start: 11, end: 22 }, Range { start: 95, end: 115 },
-            Range { start: 998, end: 1012 }, Range { start: 1188511880, end: 1188511890 },
-            Range { start: 222220, end: 222224 }, Range { start: 1698522, end: 1698528 },
-            Range { start: 446443, end: 446449 }, Range { start: 38593856, end: 38593862 },
-            Range { start: 565653, end: 565659 }, Range { start: 824824821, end: 824824827 },
-            Range { start: 2121212118, end: 2121212124 },
-        ]
-    }
 
     #[test]
     fn test_part_01() {
@@ -69,7 +82,7 @@ mod tests {
 824824821-824824827,2121212118-2121212124\
 ";
 
-        assert_eq!(resolve(test_input), 1227775554);
+        assert_eq!(resolve(test_input), 4174379265);
     }
 
     #[test]
@@ -77,8 +90,16 @@ mod tests {
         assert_eq!(11_i64.is_invalid_id(), true);
         assert_eq!(20_i64.is_invalid_id(), false);
         assert_eq!(22_i64.is_invalid_id(), true);
-        assert_eq!(20_i64.is_valid_id(), true);
-        assert_eq!(22_i64.is_valid_id(), false);
+    }
+    #[test]
+    fn test_some_ids() {
+        assert_eq!(11_i64.is_invalid_id(), true);
+        assert_eq!(20_i64.is_invalid_id(), false);
+        assert_eq!(22_i64.is_invalid_id(), true);
+        assert_eq!(12341234_i64.is_invalid_id(), true);
+        assert_eq!(123123123_i64.is_invalid_id(), true);
+        assert_eq!(1212121212_i64.is_invalid_id(), true);
+        assert_eq!(1111111_i64.is_invalid_id(), true);
     }
 
     #[test]
@@ -89,12 +110,12 @@ mod tests {
     #[test]
     fn test_invalid_ids_in_range_02() {
         let range = Range { start: 95, end: 115 };
-        assert_eq!(range.get_invalid_ids(), Some(vec![ 99 ]));
+        assert_eq!(range.get_invalid_ids(), Some(vec![ 99, 111 ]));
     }
     #[test]
     fn test_invalid_ids_in_range_03() {
         let range = Range { start: 998, end: 1012 };
-        assert_eq!(range.get_invalid_ids(), Some(vec![ 1010 ]));
+        assert_eq!(range.get_invalid_ids(), Some(vec![ 999, 1010 ]));
     }
     #[test]
     fn test_invalid_ids_in_range_04() {
@@ -124,16 +145,79 @@ mod tests {
     #[test]
     fn test_invalid_ids_in_range_09() {
         let range = Range { start: 565653, end: 565659 };
-        assert_eq!(range.get_invalid_ids(), None);
+        assert_eq!(range.get_invalid_ids(), Some(vec![ 565656 ]));
     }
     #[test]
     fn test_invalid_ids_in_range_10() {
         let range = Range { start: 824824821, end: 824824827 };
-        assert_eq!(range.get_invalid_ids(), None);
+        assert_eq!(range.get_invalid_ids(), Some(vec![ 824824824 ]));
     }
     #[test]
     fn test_invalid_ids_in_range_11() {
         let range = Range { start: 2121212118, end: 2121212124 };
-        assert_eq!(range.get_invalid_ids(), None);
+        assert_eq!(range.get_invalid_ids(), Some(vec![ 2121212121 ]));
+    }
+
+    #[test]
+    fn test_substring_01() {
+        assert_eq!(split_in_multiple_string("12341234", 2), vec![ Some("1234"), Some("1234") ]);
+        assert_eq!(split_in_multiple_string("12341234", 3), vec![ None ]);
+        assert_eq!(split_in_multiple_string("12341234", 4), vec![ Some("12"), Some("34"), Some("12"), Some("34") ]);
+        assert_eq!(split_in_multiple_string("12341234", 5), vec![ None ]);
+        assert_eq!(split_in_multiple_string("12341234", 6), vec![ None ]);
+        assert_eq!(split_in_multiple_string("12341234", 7), vec![ None ]);
+        assert_eq!(split_in_multiple_string("12341234", 8), vec![ Some("1"), Some("2"), Some("3"), Some("4"), Some("1"), Some("2"), Some("3"), Some("4") ]);
+    }
+    #[test]
+    fn test_validate_substring_01() {
+        assert_eq!(check_if_all_substrings_are_equal(vec![ Some("1234"), Some("1234") ]), true);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ Some("12"), Some("34"), Some("12"), Some("34") ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ Some("1"), Some("2"), Some("3"), Some("4"), Some("1"), Some("2"), Some("3"), Some("4") ]), false);
+    }
+    #[test]
+    fn test_substring_02() {
+        assert_eq!(split_in_multiple_string("2121212121", 2), vec![ Some("21212"), Some("12121") ]);
+        assert_eq!(split_in_multiple_string("2121212121", 3), vec![ None ]);
+        assert_eq!(split_in_multiple_string("2121212121", 4), vec![ None ]);
+        assert_eq!(split_in_multiple_string("2121212121", 5), vec![ Some("21"), Some("21"), Some("21"), Some("21"), Some("21") ]);
+        assert_eq!(split_in_multiple_string("2121212121", 6), vec![ None ]);
+        assert_eq!(split_in_multiple_string("2121212121", 7), vec![ None ]);
+        assert_eq!(split_in_multiple_string("2121212121", 8), vec![ None ]);
+        assert_eq!(split_in_multiple_string("2121212121", 9), vec![ None ]);
+        assert_eq!(split_in_multiple_string("2121212121", 10), vec![ Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1") ]);
+    }
+    #[test]
+    fn test_validate_substring_02() {
+        assert_eq!(check_if_all_substrings_are_equal(vec![ Some("21212"), Some("12121") ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ Some("21"), Some("21"), Some("21"), Some("21"), Some("21") ]), true);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1") ]), false);
+    }
+    #[test]
+    fn test_substring_03() {
+        assert_eq!(split_in_multiple_string("1111111", 2), vec![ None ]);
+        assert_eq!(split_in_multiple_string("1111111", 3), vec![ None ]);
+        assert_eq!(split_in_multiple_string("1111111", 4), vec![ None ]);
+        assert_eq!(split_in_multiple_string("1111111", 5), vec![ None ]);
+        assert_eq!(split_in_multiple_string("1111111", 6), vec![ None ]);
+        assert_eq!(split_in_multiple_string("1111111", 7), vec![ Some("1"), Some("1"), Some("1"), Some("1"), Some("1"), Some("1"), Some("1") ]);
+    }
+    #[test]
+    fn test_validate_substring_03() {
+        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(check_if_all_substrings_are_equal(vec![ Some("1"), Some("1"), Some("1"), Some("1"), Some("1"), Some("1"), Some("1") ]), true);
     }
 }
