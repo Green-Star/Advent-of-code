@@ -33,18 +33,18 @@ impl Range {
 }
 
 trait ID {
-    fn is_invalid_id(&self) -> bool ;
-    fn is_valid_id(&self) -> bool {
-        !self.is_invalid_id()
-    }
-}
-impl ID for i64 {
-    fn is_invalid_id(&self) -> bool {
+    fn is_invalid_id(&self) -> bool
+    where Self: std::fmt::Display {
         let self_string = format!("{self}");
         let (left, right) = self_string.split_at(self_string.len() / 2);
         left == right
     }
+    fn is_valid_id(&self) -> bool
+    where Self: std::fmt::Display {
+        !self.is_invalid_id()
+    }
 }
+impl ID for i64 {}
 
 
 #[cfg(test)]
