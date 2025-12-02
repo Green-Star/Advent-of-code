@@ -39,7 +39,7 @@ trait ID {
         let (left, right) = self_string.split_at(self_string.len() / 2);
         left == right
     }
-    fn is_valid_id(&self) -> bool
+    fn _is_valid_id(&self) -> bool
     where Self: std::fmt::Display {
         !self.is_invalid_id()
     }
@@ -50,16 +50,6 @@ impl ID for i64 {}
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn get_expected_data() -> Vec<Range> {
-        vec![ Range { start: 11, end: 22 }, Range { start: 95, end: 115 },
-            Range { start: 998, end: 1012 }, Range { start: 1188511880, end: 1188511890 },
-            Range { start: 222220, end: 222224 }, Range { start: 1698522, end: 1698528 },
-            Range { start: 446443, end: 446449 }, Range { start: 38593856, end: 38593862 },
-            Range { start: 565653, end: 565659 }, Range { start: 824824821, end: 824824827 },
-            Range { start: 2121212118, end: 2121212124 },
-        ]
-    }
 
     #[test]
     fn test_part_01() {
@@ -77,8 +67,6 @@ mod tests {
         assert_eq!(11_i64.is_invalid_id(), true);
         assert_eq!(20_i64.is_invalid_id(), false);
         assert_eq!(22_i64.is_invalid_id(), true);
-        assert_eq!(20_i64.is_valid_id(), true);
-        assert_eq!(22_i64.is_valid_id(), false);
     }
 
     #[test]
