@@ -1,0 +1,30 @@
+pub fn resolve(s: &str) -> i32 {
+    let transformed_data = transform_data(s);
+    0
+}
+
+fn transform_data(data: &str) -> Vec<i32> {
+    let mut result = vec![];
+
+    for l in data.lines() {
+    }
+
+    result
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_part_02() {
+        let test_input = "\
+11-22,95-115,998-1012,1188511880-1188511890,222220-222224,\
+1698522-1698528,446443-446449,38593856-38593862,565653-565659,\
+824824821-824824827,2121212118-2121212124\
+";
+
+        assert_eq!(resolve(test_input), 0);
+    }
+}
