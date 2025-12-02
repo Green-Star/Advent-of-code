@@ -36,11 +36,7 @@ trait ID {
     fn is_invalid_id(&self) -> bool
     where Self: std::fmt::Display {
         let self_string = format!("{self}");
-        for i in 2..=self_string.len() {
-            let v = Self::split_in_multiple_string(&self_string, i);
-            if Self::check_if_all_substrings_are_equal(v) { return true }
-        }
-        false
+        (2..=self_string.len()).any(|nb_substring| Self::check_if_all_substrings_are_equal(Self::split_in_multiple_string(&self_string, nb_substring)))
     }
     fn _is_valid_id(&self) -> bool
     where Self: std::fmt::Display {
