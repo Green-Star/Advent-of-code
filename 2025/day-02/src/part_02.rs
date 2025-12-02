@@ -37,8 +37,8 @@ trait ID {
     where Self: std::fmt::Display {
         let self_string = format!("{self}");
         for i in 2..=self_string.len() {
-            let v = split_in_multiple_string(&self_string, i);
-            if check_if_all_substrings_are_equal(v) { return true }
+            let v = Self::split_in_multiple_string(&self_string, i);
+            if Self::check_if_all_substrings_are_equal(v) { return true }
         }
         false
     }
@@ -46,29 +46,31 @@ trait ID {
     where Self: std::fmt::Display {
         !self.is_invalid_id()
     }
+
+
+    fn split_in_multiple_string(s: &str, nb_output_strings: usize) -> Vec<Option<&str>> {
+        /* If s cannot be equally divide in nb_output_strings, return nothing */
+        if s.len() % nb_output_strings != 0 { return vec![ None ] }
+
+        /* Otherise, split s in nb_output_strings (each with the same number of chars) */
+        let mut substrings = vec![];
+
+        let substring_length = s.len() / nb_output_strings;
+        let mut offset = 0;
+
+        while offset < s.len() {
+            substrings.push(s.get(offset..offset + substring_length));
+            offset += substring_length;
+        }
+
+        substrings
+    }
+    fn check_if_all_substrings_are_equal(substrings: Vec<Option<&str>>) -> bool {
+        substrings.iter().all(|o| o.is_some()) && substrings.windows(2).all(|w| w[0] == w[1])
+    }
 }
 impl ID for i64 {}
 
-fn split_in_multiple_string(s: &str, nb_output_strings: usize) -> Vec<Option<&str>> {
-    /* If s cannot be equally divide in nb_output_strings, return nothing */
-    if s.len() % nb_output_strings != 0 { return vec![ None ] }
-
-    /* Otherise, split s in nb_output_strings (each with the same number of chars) */
-    let mut substrings = vec![];
-
-    let substring_length = s.len() / nb_output_strings;
-    let mut offset = 0;
-
-    while offset < s.len() {
-        substrings.push(s.get(offset..offset + substring_length));
-        offset += substring_length;
-    }
-
-    substrings
-}
-fn check_if_all_substrings_are_equal(substrings: Vec<Option<&str>>) -> bool {
-    substrings.iter().all(|o| o.is_some()) && substrings.windows(2).all(|w| w[0] == w[1])
-}
 
 #[cfg(test)]
 mod tests {
@@ -160,64 +162,64 @@ mod tests {
 
     #[test]
     fn test_substring_01() {
-        assert_eq!(split_in_multiple_string("12341234", 2), vec![ Some("1234"), Some("1234") ]);
-        assert_eq!(split_in_multiple_string("12341234", 3), vec![ None ]);
-        assert_eq!(split_in_multiple_string("12341234", 4), vec![ Some("12"), Some("34"), Some("12"), Some("34") ]);
-        assert_eq!(split_in_multiple_string("12341234", 5), vec![ None ]);
-        assert_eq!(split_in_multiple_string("12341234", 6), vec![ None ]);
-        assert_eq!(split_in_multiple_string("12341234", 7), vec![ None ]);
-        assert_eq!(split_in_multiple_string("12341234", 8), vec![ Some("1"), Some("2"), Some("3"), Some("4"), Some("1"), Some("2"), Some("3"), Some("4") ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("12341234", 2), vec![ Some("1234"), Some("1234") ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("12341234", 3), vec![ None ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("12341234", 4), vec![ Some("12"), Some("34"), Some("12"), Some("34") ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("12341234", 5), vec![ None ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("12341234", 6), vec![ None ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("12341234", 7), vec![ None ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("12341234", 8), vec![ Some("1"), Some("2"), Some("3"), Some("4"), Some("1"), Some("2"), Some("3"), Some("4") ]);
     }
     #[test]
     fn test_validate_substring_01() {
-        assert_eq!(check_if_all_substrings_are_equal(vec![ Some("1234"), Some("1234") ]), true);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ Some("12"), Some("34"), Some("12"), Some("34") ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ Some("1"), Some("2"), Some("3"), Some("4"), Some("1"), Some("2"), Some("3"), Some("4") ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ Some("1234"), Some("1234") ]), true);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ Some("12"), Some("34"), Some("12"), Some("34") ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ Some("1"), Some("2"), Some("3"), Some("4"), Some("1"), Some("2"), Some("3"), Some("4") ]), false);
     }
     #[test]
     fn test_substring_02() {
-        assert_eq!(split_in_multiple_string("2121212121", 2), vec![ Some("21212"), Some("12121") ]);
-        assert_eq!(split_in_multiple_string("2121212121", 3), vec![ None ]);
-        assert_eq!(split_in_multiple_string("2121212121", 4), vec![ None ]);
-        assert_eq!(split_in_multiple_string("2121212121", 5), vec![ Some("21"), Some("21"), Some("21"), Some("21"), Some("21") ]);
-        assert_eq!(split_in_multiple_string("2121212121", 6), vec![ None ]);
-        assert_eq!(split_in_multiple_string("2121212121", 7), vec![ None ]);
-        assert_eq!(split_in_multiple_string("2121212121", 8), vec![ None ]);
-        assert_eq!(split_in_multiple_string("2121212121", 9), vec![ None ]);
-        assert_eq!(split_in_multiple_string("2121212121", 10), vec![ Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1") ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("2121212121", 2), vec![ Some("21212"), Some("12121") ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("2121212121", 3), vec![ None ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("2121212121", 4), vec![ None ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("2121212121", 5), vec![ Some("21"), Some("21"), Some("21"), Some("21"), Some("21") ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("2121212121", 6), vec![ None ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("2121212121", 7), vec![ None ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("2121212121", 8), vec![ None ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("2121212121", 9), vec![ None ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("2121212121", 10), vec![ Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1") ]);
     }
     #[test]
     fn test_validate_substring_02() {
-        assert_eq!(check_if_all_substrings_are_equal(vec![ Some("21212"), Some("12121") ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ Some("21"), Some("21"), Some("21"), Some("21"), Some("21") ]), true);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1") ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ Some("21212"), Some("12121") ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ Some("21"), Some("21"), Some("21"), Some("21"), Some("21") ]), true);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1"), Some("2"), Some("1") ]), false);
     }
     #[test]
     fn test_substring_03() {
-        assert_eq!(split_in_multiple_string("1111111", 2), vec![ None ]);
-        assert_eq!(split_in_multiple_string("1111111", 3), vec![ None ]);
-        assert_eq!(split_in_multiple_string("1111111", 4), vec![ None ]);
-        assert_eq!(split_in_multiple_string("1111111", 5), vec![ None ]);
-        assert_eq!(split_in_multiple_string("1111111", 6), vec![ None ]);
-        assert_eq!(split_in_multiple_string("1111111", 7), vec![ Some("1"), Some("1"), Some("1"), Some("1"), Some("1"), Some("1"), Some("1") ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("1111111", 2), vec![ None ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("1111111", 3), vec![ None ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("1111111", 4), vec![ None ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("1111111", 5), vec![ None ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("1111111", 6), vec![ None ]);
+        assert_eq!(<i64 as ID>::split_in_multiple_string("1111111", 7), vec![ Some("1"), Some("1"), Some("1"), Some("1"), Some("1"), Some("1"), Some("1") ]);
     }
     #[test]
     fn test_validate_substring_03() {
-        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ None ]), false);
-        assert_eq!(check_if_all_substrings_are_equal(vec![ Some("1"), Some("1"), Some("1"), Some("1"), Some("1"), Some("1"), Some("1") ]), true);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ None ]), false);
+        assert_eq!(<i64 as ID>::check_if_all_substrings_are_equal(vec![ Some("1"), Some("1"), Some("1"), Some("1"), Some("1"), Some("1"), Some("1") ]), true);
     }
 }
