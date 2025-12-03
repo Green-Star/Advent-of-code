@@ -1,6 +1,8 @@
-pub fn resolve(s: &str) -> u32 {
+use std::cmp::max;
+
+pub fn resolve(s: &str) -> u64 {
     let transformed_data = transform_data(s);
-    let final_result: u32 = transformed_data.iter().map(|bank| get_joltage(bank)).sum();
+    let final_result: u64 = transformed_data.iter().map(|bank| get_joltage(bank)).sum();
     final_result
 }
 
@@ -18,7 +20,8 @@ fn transform_data(data: &str) -> Vec<Vec<u32>> {
     result
 }
 
-fn get_joltage(bank: &Vec<u32>) -> u32 {
+/*
+fn get_joltage(bank: &Vec<u32>) -> u64 {
     /* Search the max value for tens in the n-1 elements of the bank (as we will need at least 1 element after this value for the unit part of the joltage) */
     let sliced_bank = &bank[..bank.len()-1];
     let (ten_index, tens) = find_max_in_slice(sliced_bank);
@@ -27,7 +30,37 @@ fn get_joltage(bank: &Vec<u32>) -> u32 {
     let sliced_bank = &bank[ten_index+1..];
     let (_, unit) = find_max_in_slice(sliced_bank);
 
-    tens * 10 + unit
+    (tens * 10 + unit).into()
+}
+*/
+fn get_joltage(bank: &Vec<u32>) -> u64 {
+    let mut joltage: u64 = 0;
+    let mut start_index = 0;
+    let nb_batteries = 2;
+    for power in 0..nb_batteries {
+//        let end_index = bank.len() - (nb_batteries - 1 - power);
+//        let sliced_bank = &bank[start_index..end_index];
+        let remaining_elements = nb_batteries - power - 1;
+        let sliced_bank = &bank[start_index..bank.len()-remaining_elements];
+        let (max_index, max) = find_max_in_slice(sliced_bank);
+        joltage = joltage * 10 + Into::<u64>::into(*max);
+        start_index = max_index + 1;
+    }
+
+    joltage
+
+    // 1 quand 0
+    // 0 quand 1
+
+    // /* Search the max value for tens in the n-1 elements of the bank (as we will need at least 1 element after this value for the unit part of the joltage) */
+    // let sliced_bank = &bank[..bank.len()-1];
+    // let (ten_index, tens) = find_max_in_slice(sliced_bank);
+
+    // /* Search the max value for unit (starting with the first element after the tens position) */
+    // let sliced_bank = &bank[ten_index+1..];
+    // let (_, unit) = find_max_in_slice(sliced_bank);
+
+    // (tens * 10 + unit).into()
 }
 fn find_max_in_slice(slice: &[u32]) -> (usize, &u32) {
     slice.iter().enumerate().max_by(|(_a_index, a), (_b_index, b)| if b > a { std::cmp::Ordering::Less } else { std::cmp::Ordering::Greater } ).unwrap()
