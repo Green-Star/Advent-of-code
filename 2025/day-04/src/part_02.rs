@@ -8,7 +8,6 @@ pub fn resolve(s: &str) -> usize {
     let (mut removed, mut grid) = transformed_data.remove();
     while removed > 0 {
         final_result += removed;
-        println!("{removed} removed at this iteration ({final_result} total)");
         (removed, grid) = grid.remove();
     }
 
