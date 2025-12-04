@@ -1,27 +1,25 @@
+use std::collections::HashMap;
+
 pub fn resolve(s: &str) -> usize {
     let transformed_data = transform_data(s);
     let department = transformed_data.compute_neighbours();
-    let final_result = department.rolls.iter().filter(|r| r.neighbours < 4).count();
+    let final_result = department.rolls.values().filter(|&&neighbours| neighbours < 4).count();
     final_result
 }
 
 fn transform_data(data: &str) -> PrintingDepartment {
-    let mut grid = vec![];
-    let mut rolls = vec![];
+    let mut rolls = HashMap::new();
 
     for (i, l) in data.lines().enumerate() {
-        let mut v = vec![];
         for (j, c) in l.chars().enumerate() {
             match c {
-                '@' => rolls.push(Roll { position: (i, j), neighbours: 0 }),
+                '@' => { rolls.insert((i, j), 0); },
                 _ => {},
             }
-            v.push(c);
         }
-        grid.push(v);
     }
 
-    PrintingDepartment { grid, rolls }
+    PrintingDepartment { rolls }
 }
 
 
@@ -33,13 +31,15 @@ struct Roll {
 
 #[derive(Debug)]
 struct PrintingDepartment {
-    grid: Vec<Vec<char>>,
-    rolls: Vec<Roll>,
+    rolls: HashMap<(usize, usize), u8>,
 }
 impl PrintingDepartment {
     fn compute_neighbours(&self) -> PrintingDepartment{
-        let computed_rolls: Vec<_> = self.rolls.iter().map(|r| Roll { position: r.position, neighbours: self.get_neighbours(r) }).collect();
-        PrintingDepartment { grid: self.grid.clone(), rolls: computed_rolls }
+        let computed_rolls: HashMap<(usize, usize), u8> = self.rolls.iter()
+                                                                    .map(|(&position, _)| Roll { position, neighbours: 0 })
+                                                                    .map(|r| (r.position, self.get_neighbours(&r)))
+                                                                    .collect();
+        PrintingDepartment { rolls: computed_rolls }
     }
 
     fn get_neighbours(&self, roll: &Roll) -> u8 {
@@ -59,7 +59,7 @@ impl PrintingDepartment {
 
         if let Some(x) = roll.position.0.checked_add_signed(offset_x) {
             if let Some(y) = roll.position.1.checked_add_signed(offset_y) {
-                if self.rolls.iter().find(|r| r.position.0 == x && r.position.1 == y).is_some() {
+                if let Some(_) = self.rolls.get(&(x, y)) {
                     return 1;
                 }
             }
