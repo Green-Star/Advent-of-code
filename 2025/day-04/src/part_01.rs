@@ -46,10 +46,6 @@ impl PrintingDepartment {
         let mut neighbours = 0;
         for offset_x in -1..=1 {
             for offset_y in -1..=1 {
-
-//                println!("[{offset_x}, {offset_y}] ");
-
-                println!("[{offset_x}, {offset_y}] -> {}", self.get_neighbours_at_position(&roll, (offset_x, offset_y)));
                 neighbours += self.get_neighbours_at_position(&roll, (offset_x, offset_y));
             }
         }
@@ -63,7 +59,6 @@ impl PrintingDepartment {
 
         if let Some(x) = roll.position.0.checked_add_signed(offset_x) {
             if let Some(y) = roll.position.1.checked_add_signed(offset_y) {
-                println!("{:?}", self.rolls);
                 if self.rolls.iter().find(|r| r.position.0 == x && r.position.1 == y).is_some() {
                     return 1;
                 }
