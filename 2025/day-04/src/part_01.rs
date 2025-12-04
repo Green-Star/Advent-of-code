@@ -24,41 +24,34 @@ fn transform_data(data: &str) -> PrintingDepartment {
 
 
 #[derive(Debug)]
-struct Roll {
-    position: (usize, usize),
-    neighbours: u8,
-}
-
-#[derive(Debug)]
 struct PrintingDepartment {
     rolls: HashMap<(usize, usize), u8>,
 }
 impl PrintingDepartment {
     fn compute_neighbours(&self) -> PrintingDepartment{
         let computed_rolls: HashMap<(usize, usize), u8> = self.rolls.iter()
-                                                                    .map(|(&position, _)| Roll { position, neighbours: 0 })
-                                                                    .map(|r| (r.position, self.get_neighbours(&r)))
+                                                                    .map(|(position, _)| (*position, self.get_neighbours_for_roll(position)))
                                                                     .collect();
         PrintingDepartment { rolls: computed_rolls }
     }
 
-    fn get_neighbours(&self, roll: &Roll) -> u8 {
+    fn get_neighbours_for_roll(&self, roll: &(usize, usize)) -> u8 {
         let mut neighbours = 0;
         for offset_x in -1..=1 {
             for offset_y in -1..=1 {
-                neighbours += self.get_neighbours_at_position(&roll, (offset_x, offset_y));
+                neighbours += self.get_neighbour_at_position(&roll, (offset_x, offset_y));
             }
         }
         neighbours
     }
-    fn get_neighbours_at_position(&self, roll: &Roll, offset: (isize, isize)) -> u8 {
+    fn get_neighbour_at_position(&self, position: &(usize, usize), offset: (isize, isize)) -> u8 {
         let (offset_x, offset_y) = offset;
         if offset_x == 0 && offset_y == 0 {
             return 0;
         }
 
-        if let Some(x) = roll.position.0.checked_add_signed(offset_x) {
-            if let Some(y) = roll.position.1.checked_add_signed(offset_y) {
+        if let Some(x) = position.0.checked_add_signed(offset_x) {
+            if let Some(y) = position.1.checked_add_signed(offset_y) {
                 if let Some(_) = self.rolls.get(&(x, y)) {
                     return 1;
                 }
@@ -110,46 +103,46 @@ mod tests {
     #[test]
     fn test_neighbours_count_01() {
         let grid = easy_setup_grid();
-        assert_eq!(grid.get_neighbours(&Roll { position: (0, 2), neighbours: 0}), 3);
+        assert_eq!(grid.get_neighbours_for_roll(&(0, 2)), 3);
     }
     #[test]
     fn test_neighbours_count_02() {
         let grid = easy_setup_grid();
-        assert_eq!(grid.get_neighbours(&Roll { position: (0, 3), neighbours: 0}), 3);
+        assert_eq!(grid.get_neighbours_for_roll(&(0, 3)), 3);
     }
     #[test]
     fn test_neighbours_count_03() {
         let grid = easy_setup_grid();
-        assert_eq!(grid.get_neighbours(&Roll { position: (0, 7), neighbours: 0}), 4);
+        assert_eq!(grid.get_neighbours_for_roll(&(0, 7)), 4);
     }
     #[test]
     fn test_neighbours_count_04() {
         let grid = easy_setup_grid();
-        assert_eq!(grid.get_neighbours(&Roll { position: (0, 7), neighbours: 0}), 4);
+        assert_eq!(grid.get_neighbours_for_roll(&(0, 7)), 4);
     }
     #[test]
     fn test_neighbours_count_05() {
         let grid = easy_setup_grid();
-        assert_eq!(grid.get_neighbours(&Roll { position: (4, 4), neighbours: 0}), 8);
+        assert_eq!(grid.get_neighbours_for_roll(&(4, 4)), 8);
     }
     #[test]
     fn test_neighbours_count_06() {
         let grid = easy_setup_grid();
-        assert_eq!(grid.get_neighbours(&Roll { position: (2, 6), neighbours: 0}), 2);
+        assert_eq!(grid.get_neighbours_for_roll(&(2, 6)), 2);
     }
     #[test]
     fn test_neighbours_count_07() {
         let grid = easy_setup_grid();
-        assert_eq!(grid.get_neighbours(&Roll { position: (5, 9), neighbours: 0}), 4);
+        assert_eq!(grid.get_neighbours_for_roll(&(5, 9)), 4);
     }
     #[test]
     fn test_neighbours_count_08() {
         let grid = easy_setup_grid();
-        assert_eq!(grid.get_neighbours(&Roll { position: (7, 0), neighbours: 0}), 2);
+        assert_eq!(grid.get_neighbours_for_roll(&(7, 0)), 2);
     }
     #[test]
     fn test_neighbours_count_09() {
         let grid = easy_setup_grid();
-        assert_eq!(grid.get_neighbours(&Roll { position: (9, 0), neighbours: 0}), 1);
+        assert_eq!(grid.get_neighbours_for_roll(&(9, 0)), 1);
     }
 }
