@@ -1,13 +1,26 @@
 pub fn resolve(s: &str) -> usize {
     let transformed_data = transform_data(s);
+    let sanitized_data = transformed_data.sanitize();
     0
 }
 
 fn transform_data(data: &str) -> Inventory {
-    let ranges = vec![];
-    let ingredients = vec![];
+    let mut ranges = vec![];
+    let mut ingredients = vec![];
 
+    let mut range_list = true;
     for l in data.lines() {
+        if l.is_empty() {
+            range_list = false;
+            continue;
+        }
+
+        if range_list {
+            let (range_start, range_end) = utils::core::parse_range(l);
+            ranges.push(Range { start: range_start, end: range_end });
+        } else {
+            ingredients.push(l.parse().unwrap());
+        }
     }
 
     Inventory { ranges, ingredients }
@@ -26,7 +39,7 @@ struct Inventory {
 }
 impl Inventory {
     /* In case it turns out to be usefull to merge the overlapping ranges */
-    fn sanitize_data(&self) -> Self {
+    fn sanitize(&self) -> Self {
         /* Useless for now, simply return the data */
         let ranges = self.ranges.clone();
 
@@ -88,7 +101,7 @@ mod tests {
     #[test]
     fn test_sanitize_data() {
         let test_data = easy_setup_data();
-        let sanitized = test_data.sanitize_data();
+        let sanitized = test_data.sanitize();
 
         assert_eq!(sanitized, test_data);
     }
