@@ -1,4 +1,4 @@
-use std::cmp::max;
+use std::{cmp::{max, min}, rc::Rc};
 
 pub fn resolve(s: &str) -> i64 {
     let transformed_data = transform_data(s);
@@ -52,6 +52,13 @@ impl Inventory {
             sanitized_ranges = vec![];
             merged = false;
 
+            for a in ranges_to_be_processed {
+                match sanitized_ranges.iter_mut().find(|r| (a.range.start <= r.start && a.range.end >= r.start) || (r.start <= a.range.start && r.end >= a.range.start)) {
+                    Some(s) => { s.start = min(s.start, a.range.start); s.end = max(s.end, a.range.end); merged = true },
+                    None => sanitized_ranges.push(Range { start: a.range.start, end: a.range.end }),
+                }
+            }
+/*
             for i in 0..ranges_to_be_processed.len() {
                 if ranges_to_be_processed[i].processed { continue; }
 
@@ -67,6 +74,7 @@ impl Inventory {
                 sanitized_ranges.push( Range {start: ranges_to_be_processed[i].range.start, end: merged_max });
                 ranges_to_be_processed[i].processed = true;
             }
+            */
         }
 
         /*
@@ -182,6 +190,42 @@ mod tests {
                                 ingredients: vec![ 1, 5, 8, 11, 17, 32 ],
         });
     }
+
+    #[test]
+    fn test_sanitize_data_01() {
+        let test_data = Inventory { ranges: vec![ Range { start: 1, end: 3 }, Range { start: 6, end: 8 } ], ingredients: vec![] };
+        let sanitized = test_data.sanitize();
+        assert_eq!(sanitized, Inventory { ranges: vec![ Range { start: 1, end: 3 }, Range { start: 6, end: 8 } ], ingredients: vec![] });
+    }
+
+    #[test]
+    fn test_sanitize_data_02() {
+        let test_data = Inventory { ranges: vec![ Range { start: 1, end: 5 }, Range { start: 4, end: 8 } ], ingredients: vec![] };
+        let sanitized = test_data.sanitize();
+        assert_eq!(sanitized, Inventory { ranges: vec![ Range { start: 1, end: 8 } ], ingredients: vec![] });
+    }
+
+    #[test]
+    fn test_sanitize_data_03() {
+        let test_data = Inventory { ranges: vec![ Range { start: 1, end: 8 }, Range { start: 3, end: 5 } ], ingredients: vec![] };
+        let sanitized = test_data.sanitize();
+        assert_eq!(sanitized, Inventory { ranges: vec![ Range { start: 1, end: 8 } ], ingredients: vec![] });
+    }
+
+    #[test]
+    fn test_sanitize_data_04() {
+        let test_data = Inventory { ranges: vec![ Range { start: 3, end: 8 }, Range { start: 1, end: 5 } ], ingredients: vec![] };
+        let sanitized = test_data.sanitize();
+        assert_eq!(sanitized, Inventory { ranges: vec![ Range { start: 1, end: 8 } ], ingredients: vec![] });
+    }
+
+    #[test]
+    fn test_sanitize_data_05() {
+        let test_data = Inventory { ranges: vec![ Range { start: 6, end: 9 }, Range { start: 1, end: 5 } ], ingredients: vec![] };
+        let sanitized = test_data.sanitize();
+        assert_eq!(sanitized, Inventory { ranges: vec![ Range { start: 6, end: 9 }, Range { start: 1, end: 5 } ], ingredients: vec![] });
+    }
+
     #[test]
     fn test_fresh_ingredient_01() {
         let test_data = easy_setup_data();
