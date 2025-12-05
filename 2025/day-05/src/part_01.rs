@@ -1,7 +1,8 @@
 pub fn resolve(s: &str) -> usize {
     let transformed_data = transform_data(s);
     let sanitized_data = transformed_data.sanitize();
-    0
+    let final_result = sanitized_data.ingredients.iter().filter(|&&i| sanitized_data.is_fresh(i)).count();
+    final_result
 }
 
 fn transform_data(data: &str) -> Inventory {
@@ -44,6 +45,10 @@ impl Inventory {
         let ranges = self.ranges.clone();
 
         Inventory { ranges, ingredients: self.ingredients.clone() }
+    }
+
+    fn is_fresh(&self, ingredient: i64) -> bool {
+        self.ranges.iter().any(|range| range.start <= ingredient && ingredient <= range.end)
     }
 }
 
@@ -104,5 +109,35 @@ mod tests {
         let sanitized = test_data.sanitize();
 
         assert_eq!(sanitized, test_data);
+    }
+    #[test]
+    fn test_fresh_ingredient_01() {
+        let test_data = easy_setup_data();
+        assert_eq!(test_data.is_fresh(1), false);
+    }
+    #[test]
+    fn test_fresh_ingredient_02() {
+        let test_data = easy_setup_data();
+        assert_eq!(test_data.is_fresh(5), true);
+    }
+    #[test]
+    fn test_fresh_ingredient_03() {
+        let test_data = easy_setup_data();
+        assert_eq!(test_data.is_fresh(8), false);
+    }
+    #[test]
+    fn test_fresh_ingredient_04() {
+        let test_data = easy_setup_data();
+        assert_eq!(test_data.is_fresh(11), true);
+    }
+    #[test]
+    fn test_fresh_ingredient_05() {
+        let test_data = easy_setup_data();
+        assert_eq!(test_data.is_fresh(17), true);
+    }
+    #[test]
+    fn test_fresh_ingredient_06() {
+        let test_data = easy_setup_data();
+        assert_eq!(test_data.is_fresh(32), false);
     }
 }
