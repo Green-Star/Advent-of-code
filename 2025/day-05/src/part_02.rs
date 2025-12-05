@@ -1,3 +1,5 @@
+use std::cmp::max;
+
 pub fn resolve(s: &str) -> i64 {
     let transformed_data = transform_data(s);
     let sanitized_data = transformed_data.sanitize();
@@ -39,12 +41,67 @@ struct Inventory {
     ingredients: Vec<i64>,
 }
 impl Inventory {
-    /* In case it turns out to be usefull to merge the overlapping ranges */
+    /* In case it turns out to be useful to merge the overlapping ranges */
+    /* It turned out to be useful :) */
     fn sanitize(&self) -> Self {
-        /* Useless for now, simply return the data */
-        let ranges = self.ranges.clone();
+        let mut sanitized_ranges = self.ranges.clone();
+        let mut merged = true;
 
-        Inventory { ranges, ingredients: self.ingredients.clone() }
+        while merged {
+            let mut ranges_to_be_processed: Vec<_> = sanitized_ranges.iter().map(|r| SanitizedRange { range: *r, processed: false }).collect();
+            sanitized_ranges = vec![];
+            merged = false;
+
+            for i in 0..ranges_to_be_processed.len() {
+                if ranges_to_be_processed[i].processed { continue; }
+
+                let mut merged_max = ranges_to_be_processed[i].range.end;
+                for j in i+1..ranges_to_be_processed.len() {
+                    if ranges_to_be_processed[j].range.start < ranges_to_be_processed[i].range.end {
+                        merged_max = max(merged_max, ranges_to_be_processed[j].range.end);
+                        ranges_to_be_processed[j].processed = true;
+                        merged = true;
+                    }
+                }
+
+                sanitized_ranges.push( Range {start: ranges_to_be_processed[i].range.start, end: merged_max });
+                ranges_to_be_processed[i].processed = true;
+            }
+        }
+
+        /*
+        let mut ranges_to_be_processed: Vec<_> = self.ranges.iter().map(|r| SanitizedRange { range: *r, processed: false }).collect();
+
+        let mut sanitized_ranges = vec![];
+
+        for i in 0..ranges_to_be_processed.len() {
+            if ranges_to_be_processed[i].processed { continue; }
+
+            let mut merged_max = ranges_to_be_processed[i].range.end;
+            for j in i+1..ranges_to_be_processed.len() {
+                if ranges_to_be_processed[j].range.start < ranges_to_be_processed[i].range.end {
+                    merged_max = max(merged_max, ranges_to_be_processed[j].range.end);
+                    ranges_to_be_processed[j].processed = true;
+                    merged = true;
+                }
+            }
+
+            sanitized_ranges.push( Range {start: ranges_to_be_processed[i].range.start, end: merged_max });
+            ranges_to_be_processed[i].processed = true;
+        }
+        */
+
+/*
+        for (index, range) in self.ranges.iter().enumerate() {
+            for r in &self.ranges[index..] {
+                if r.start < range.end {
+                    Range { start: range.start, end: max(r.end, range.end) };
+                }
+            }
+        }
+*/
+
+        Inventory { ranges: sanitized_ranges, ingredients: self.ingredients.clone() }
     }
 
     fn is_fresh(&self, ingredient: i64) -> bool {
@@ -57,6 +114,11 @@ impl Inventory {
     fn get_number_of_fresh_ingredients(&self, range: &Range) -> i64 {
         range.end - range.start + 1
     }
+}
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+struct SanitizedRange {
+    range: Range,
+    processed: bool,
 }
 
 #[cfg(test)]
@@ -115,7 +177,10 @@ mod tests {
         let test_data = easy_setup_data();
         let sanitized = test_data.sanitize();
 
-        assert_eq!(sanitized, test_data);
+        assert_eq!(sanitized, Inventory {
+                                ranges: vec![ Range { start: 3, end: 5 }, Range { start: 10, end: 20 }, ],
+                                ingredients: vec![ 1, 5, 8, 11, 17, 32 ],
+        });
     }
     #[test]
     fn test_fresh_ingredient_01() {
