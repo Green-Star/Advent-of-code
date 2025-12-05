@@ -1,10 +1,8 @@
-use std::collections::HashSet;
-
-pub fn resolve(s: &str) -> usize {
+pub fn resolve(s: &str) -> i64 {
     let transformed_data = transform_data(s);
     let sanitized_data = transformed_data.sanitize();
     let final_result = sanitized_data.get_all_fresh_ingredients();
-    final_result.len()
+    final_result
 }
 
 fn transform_data(data: &str) -> Inventory {
@@ -53,12 +51,11 @@ impl Inventory {
         self.ranges.iter().any(|range| range.start <= ingredient && ingredient <= range.end)
     }
 
-    fn get_all_fresh_ingredients(&self) -> Vec<i64> {
-        let mut fresh = HashSet::new();
-
-        self.ranges.iter().for_each(|range| (range.start..=range.end).for_each(|i| { fresh.insert(i); }));
-
-        fresh.into_iter().collect()
+    fn get_all_fresh_ingredients(&self) -> i64 {
+        self.ranges.iter().map(|r| self.get_number_of_fresh_ingredients(r)).sum()
+    }
+    fn get_number_of_fresh_ingredients(&self, range: &Range) -> i64 {
+        range.end - range.start + 1
     }
 }
 
@@ -152,16 +149,17 @@ mod tests {
     }
 
     #[test]
-    fn test_all_fresh_ingredient() {
+    fn test_fresh_range_01() {
         let test_data = easy_setup_data();
-        let expected = vec![ 3, 4, 5, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 ];
 
-        let mut fresh = test_data.get_all_fresh_ingredients();
-        // get_all_fresh_ingredients is unstable (based on a HashMap),
-        //  so resort it to avoid failing the test because of misplaced numbers
-        // order is irrelevant on this test
-        fresh.sort();
+        let test = test_data.get_number_of_fresh_ingredients(&Range { start: 3, end: 5 });
+        assert_eq!(test, 3);
+    }
+    #[test]
+    fn test_fresh_range_02() {
+        let test_data = easy_setup_data();
 
-        assert_eq!(fresh, expected);
+        let test = test_data.get_number_of_fresh_ingredients(&Range { start: 10, end: 20 });
+        assert_eq!(test, 11);
     }
 }
