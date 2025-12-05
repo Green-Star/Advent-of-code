@@ -96,6 +96,33 @@ pub mod core {
         parse_number_list_with_separator(s, "|")
     }
 
+    /// Parse the string `s`, returning a tuple containing the start and end numbers for the range
+    /// The numbers in `s` are dash-separated
+    ///
+    /// # Examples
+    /// ```
+    /// use utils::core::parse_range;
+    ///
+    /// let result: (i32, i32) = parse_range("3-5");
+    /// assert_eq!(result, (3, 5));
+    /// let result: (i32, i32) = parse_range("998-1012");
+    /// assert_eq!(result, (998, 1012));
+    /// let result: (i32, i32) = parse_range("1188511880-1188511890");
+    /// assert_eq!(result, (1188511880, 1188511890));
+    /// ```
+    /// Note: the extracted numbers are type-agnostics:
+    /// ```
+    /// use utils::core::parse_range;
+    ///
+    /// let result: (i32, i32) = parse_range("998-1012");
+    /// assert_eq!(result, (998, 1012));
+    /// let result: (i64, i64) = parse_range("998-1012");
+    /// assert_eq!(result, (998, 1012));
+    /// ```
+    pub fn parse_range<T: std::str::FromStr + Copy>(s: &str) -> (T, T) {
+        let parsed = parse_number_list_with_separator(s, "-");
+        (parsed[0], parsed[1])
+    }
 }
 
 
@@ -139,5 +166,14 @@ mod tests {
         assert_eq!(result, [ 41_i32, 48_i32, 83_i32, 86_i32, 17_i32 ]);
         let result: Vec<i64> = parse_pipe_number_list("41|48|83|86|17");
         assert_eq!(result, [ 41_i64, 48_i64, 83_i64, 86_i64, 17_i64 ]);
+
+        let result: (i32, i32) = parse_range("998-1012");
+        assert_eq!(result, (998, 1012));
+        let result: (i32, i32) = parse_range("1188511880-1188511890");
+        assert_eq!(result, (1188511880, 1188511890));
+        let result: (i32, i32) = parse_range("998-1012");
+        assert_eq!(result, (998, 1012));
+        let result: (i64, i64) = parse_range("998-1012");
+        assert_eq!(result, (998, 1012));
     }
 }
