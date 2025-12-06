@@ -12,18 +12,8 @@ fn transform_data(data: &str) -> Vec<Problem> {
     let operands = extract_operands(data);
     let operations = extract_operation(data);
 
-    println!("{:?}", operands);
-    println!("{:?}", operations);
-
-    for l in data.lines() {
-        for (i, o) in l.split_whitespace().enumerate() {
-            println!("[{o}]");
-            match o {
-                "+" => result.entry(i).and_modify(|p: &mut Problem| p.operation = Operation::Add).or_insert(Problem { operands: vec![], operation: Operation::Add }),
-                "*" => result.entry(i).and_modify(|p| p.operation = Operation::Mult).or_insert(Problem { operands: vec![], operation: Operation::Mult }),
-                _ => result.entry(i).and_modify(|p| p.operands.push(o.parse().unwrap())).or_insert(Problem { operands: vec![ o.parse().unwrap() ], operation: Operation::None }),
-            };
-        }
+    for (i, vector) in operands.iter().enumerate() {
+        result.entry(i).and_modify(|p: &mut Problem| p.operands = vector.clone()).or_insert(Problem { operands: vector.clone(), operation: Operation::None });
     }
 
     for (i, &o) in operations.iter().enumerate() {
@@ -56,19 +46,20 @@ fn extract_operands(data: &str) -> Vec<Vec<i32>> {
         let string_number = char_number.iter().collect::<String>();
         let string_number = string_number.trim();
 
-        println!("Here's the string: [{string_number}]");
-
         // Quick check: We trimmed the string. If it is empty, it means we ran through a column containing only spaces
         //  -> This is a "Problem-separator" column, so we need to end the current problem and start a new one
         if string_number.is_empty() {
             // Note: The problem are RTL but we process the line LTR, so we do need the reverse the current problem numbers before pushing them in the global operands vector
-            current_problem_operands.reverse();
-            problems_operands.push(current_problem_operands);
+            problems_operands.push(current_problem_operands.into_iter().rev().collect());
             current_problem_operands = vec![];
         // Otherwise, just parse and store the number in the current problem
         } else {
             current_problem_operands.push(string_number.parse().unwrap());
         }
+    }
+    /* Also, don't forget to add the last problem processed (since we won't get any "space-separator-column" for this one) */
+    if !(current_problem_operands.is_empty()) {
+        problems_operands.push(current_problem_operands.into_iter().rev().collect());
     }
 
     problems_operands
@@ -141,12 +132,7 @@ mod tests {
 
     #[test]
     fn test_transform_data_02() {
-        let test_input = "\
-        328\n\
-        64 \n\
-        98 \n\
-        +\n\
-        ";
+        let test_input = "328\n64 \n98 \n+\n";
 
         assert_eq!(transform_data(test_input), vec![ Problem { operands: vec![ 8, 248, 369 ], operation: Operation::Add } ]);
     }
@@ -195,7 +181,7 @@ mod tests {
 
     #[test]
     fn test_solve_problem_04() {
-        let test = Problem { operands: vec![ 356, 24, 1 ], operation: Operation::Add };
+        let test = Problem { operands: vec![ 356, 24, 1 ], operation: Operation::Mult };
         assert_eq!(test.solve(), 8544);
     }
 }
