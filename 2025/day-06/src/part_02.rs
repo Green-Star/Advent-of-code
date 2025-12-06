@@ -76,7 +76,6 @@ fn extract_operation(data: &str) -> Vec<Operation> {
         }
     };
 
-    println!("[{:?}]", result);
     result
 }
 
