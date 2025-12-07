@@ -3,7 +3,6 @@ use std::collections::{HashMap, HashSet};
 pub fn resolve(s: &str) -> u64 {
     let mut manifold = transform_data(s);
     manifold.beam_simulation();
-//    println!("{:?}", manifold);
     let final_result = manifold.ending_path.values().sum();
     final_result
 }
@@ -52,7 +51,6 @@ impl Manifold {
         let mut next_beams = HashMap::new();
 
         for (&b, beam_count) in &self.beams {
-//            println!("Move beam {:?}-{beam_count}", b);
             // Move the beam down
             let beam_down = Position { x: b.x, y: b.y + 1 };
 
@@ -64,12 +62,9 @@ impl Manifold {
 
             // Otherwise, split it we hit a splitter or go downward if there is nothing
             if let Some(_) = self.splitters.get(&beam_down) {
-//                println!("Hit somethig at {:?}", beam_down);
                 vec![(-1, 0), (1, 0)].iter().for_each(|&(offset_x, offset_y)| {
                     if let Some(next_x) = beam_down.x.checked_add_signed(offset_x) {
                         if let Some(next_y) = beam_down.y.checked_add_signed(offset_y) {
-//
-//                            println!("Next beam at ({next_x}, {next_y})...");
                             if next_x < self.length && next_y < self.height {
                                 next_beams.entry(Position { x: next_x, y: next_y }).and_modify(|count| *count += beam_count).or_insert(*beam_count);
                             }
