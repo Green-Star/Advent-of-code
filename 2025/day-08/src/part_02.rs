@@ -95,7 +95,7 @@ impl Playground {
         }
     }
 
-    fn get_three_largest_size(&self) -> usize {
+    fn _get_three_largest_size(&self) -> usize {
         let mut circuits = self.circuits.clone();
         circuits.sort_by(|a, b| a.len().cmp(&b.len()));
         let a = circuits.pop().unwrap();
