@@ -1,9 +1,9 @@
 use std::cmp::Ordering;
 
-pub fn resolve(s: &str) -> i32 {
+pub fn resolve(s: &str) -> i64 {
     let mut playground = transform_data(s);
     let (x, y) = playground.compute_until_single_circuit();
-    let final_result = x.x * y.x;
+    let final_result = (x.x as i64) * (y.x as i64);
     final_result
 }
 
