@@ -1,17 +1,13 @@
 use std::cmp::Ordering;
 
 pub fn resolve(s: &str) -> usize {
-    resolve_with_step(s, 1000)
+    resolve_with_step(s, 1000) as usize
 }
 
-fn resolve_with_step(s: &str, step: u32) -> usize {
+fn resolve_with_step(s: &str, step: u32) -> i32 {
     let mut playground = transform_data(s);
-
-    for _ in 1..=step {
-        playground.compute_step();
-    }
-
-    let final_result = playground.get_three_largest_size();
+    let (x, y) = playground.compute_until_single_circuit();
+    let final_result = x.x * y.x;
     final_result
 }
 
@@ -68,9 +64,19 @@ impl Playground {
         )
     }
 
-    fn compute_step(&mut self) {
+    fn compute_until_single_circuit(&mut self) -> (Box, Box) {
+        loop {
+            let (a, b) = self.compute_step();
+            if self.circuits.len() == 1 {
+                break (a, b)
+            }
+        }
+    }
+
+    fn compute_step(&mut self) -> (Box, Box) {
         let (a, b, _) = self.distances.pop().unwrap();
         self.merge_ciruit(&a, &b);
+        (a, b)
     }
 
     fn merge_ciruit(&mut self, a: &Box, b: &Box) {
@@ -164,7 +170,7 @@ mod tests {
 425,690,689
 ";
 
-        assert_eq!(resolve_with_step(test_input, 10), 40);
+        assert_eq!(resolve_with_step(test_input, 10), 25272);
     }
 
 
