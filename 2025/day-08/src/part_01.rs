@@ -11,7 +11,6 @@ fn resolve_with_step(s: &str, step: u32) -> usize {
         playground.compute_step();
     }
 
-    println!("{:?}", playground);
     let final_result = playground.get_three_largest_size();
     final_result
 }
