@@ -62,7 +62,11 @@ impl Playground {
         distances
     }
     fn compute_distance_between_boxes(a: &Box, b: &Box) -> f64 {
-        f64::sqrt(((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y) + (b.z - a.z) * (b.z - a.z)).into())
+        f64::sqrt(
+                ((b.x - a.x) as f64 * (b.x - a.x) as f64) +
+                ((b.y - a.y) as f64 * (b.y - a.y) as f64) +
+                ((b.z - a.z) as f64 * (b.z - a.z) as f64)
+        )
     }
 
     fn compute_step(&mut self) {
