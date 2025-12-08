@@ -1,10 +1,6 @@
 use std::cmp::Ordering;
 
-pub fn resolve(s: &str) -> usize {
-    resolve_with_step(s, 1000) as usize
-}
-
-fn resolve_with_step(s: &str, step: u32) -> i32 {
+pub fn resolve(s: &str) -> i32 {
     let mut playground = transform_data(s);
     let (x, y) = playground.compute_until_single_circuit();
     let final_result = x.x * y.x;
@@ -170,7 +166,7 @@ mod tests {
 425,690,689
 ";
 
-        assert_eq!(resolve_with_step(test_input, 10), 25272);
+        assert_eq!(resolve(test_input), 25272);
     }
 
 
