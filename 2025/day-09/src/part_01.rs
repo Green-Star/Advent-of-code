@@ -1,18 +1,31 @@
-use std::cmp::Ordering;
-
 pub fn resolve(s: &str) -> usize {
     let transformed_data = transform_data(s);
-    0
+    let rectangles = create_all_rectangles(&transformed_data);
+    let final_result = rectangles.iter().map(|(a, b)| (b.0.abs_diff(a.0) + 1) * (b.1.abs_diff(a.1) + 1)).max().unwrap();
+    final_result
 }
 
 fn transform_data(data: &str) -> Vec<(usize, usize)> {
     let mut result = vec![];
 
     for l in data.lines() {
-//        let (x, y) = utils::core::
+        let pos = utils::core::parse_comma_number_list(l);
+        result.push((pos[0], pos[1]));
     }
 
     result
+}
+
+fn create_all_rectangles(vertexes: &Vec<(usize, usize)>) -> Vec<((usize, usize), (usize, usize))> {
+    let mut rectangles = vec![];
+
+    for (index, a) in vertexes.iter().enumerate() {
+        for b in &vertexes[index+1..] {
+            rectangles.push((*a, *b));
+        }
+    }
+
+    rectangles
 }
 
 #[cfg(test)]
