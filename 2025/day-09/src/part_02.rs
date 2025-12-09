@@ -32,12 +32,12 @@ fn transform_data(data: &str) -> Theater {
     * The list wraps, so the first red tile is also connected to the last red tile.
     * Tiles that are adjacent in your list will always be on either the same row or the same column.
     */
-    let mut tiles = HashSet::new();
+    let mut border_tiles = HashSet::new();
 
     vertexes.windows(2).map(|w| (w[0], w[1])).for_each(|(a, b)| {
         for x in min(a.x, b.x)..=max(a.x, b.x) {
             for y in min(a.y, b.y)..=max(a.y, b.y) {
-                tiles.insert(Position { x, y });
+                border_tiles.insert(Position { x, y });
             }
         }
     });
@@ -46,24 +46,29 @@ fn transform_data(data: &str) -> Theater {
     let last = vertexes.last().unwrap();
     for x in min(first.x, last.x)..=max(first.x, last.x) {
         for y in min(first.y, last.y)..=max(first.y, last.y) {
-            tiles.insert(Position { x, y });
+            border_tiles.insert(Position { x, y });
         }
     }
     println!("Starting tiles ({},{}) -> {},{}", min_x.unwrap(), min_y.unwrap(), max_x.unwrap(), max_y.unwrap());
 
     /* And now fill in the tiles */
+    let mut tiles = HashSet::new();
     for x in min_x.unwrap()..=max_x.unwrap() {
-        let (min_y, max_y) = tiles.iter()
-                                                                .filter(|&&p| p.x == x)
-                                                                .map(|p| p.y)
-                                                                .fold((None, None), |(min_y, max_y), y| (Some(min(y, min_y.unwrap_or(y))), Some(max(y, max_y.unwrap_or(y)))));
+        let (min_y, max_y) = border_tiles.iter()
+                                .filter(|&&p| p.x == x)
+                                .map(|p| p.y)
+                                .fold((None, None), |(min_y, max_y), y| (Some(min(y, min_y.unwrap_or(y))), Some(max(y, max_y.unwrap_or(y)))));
+
+        if x % 10000 == 0 {
+            println!("At col x={}, {} tiles to process", x, border_tiles.len());
+        }
 
         for y in min_y.unwrap()..=max_y.unwrap() {
             tiles.insert(Position { x, y });
         }
     }
 
-    println!("{:?}", tiles);
+    println!("Tiles: {:?}", tiles);
 
     for y in 0..=8 {
         for x in 0..=13 {
