@@ -49,6 +49,7 @@ fn transform_data(data: &str) -> Theater {
             tiles.insert(Position { x, y });
         }
     }
+    println!("Starting tiles ({},{}) -> {},{}", min_x.unwrap(), min_y.unwrap(), max_x.unwrap(), max_y.unwrap());
 
     /* And now fill in the tiles */
     for x in min_x.unwrap()..=max_x.unwrap() {
