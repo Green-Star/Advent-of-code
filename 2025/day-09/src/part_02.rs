@@ -1,9 +1,9 @@
-use std::{cmp::{max, min}, collections::{HashMap, HashSet}, ops::Index};
+use std::{cmp::{max, min}, collections::HashSet};
 
 pub fn resolve(s: &str) -> usize {
-    let transformed_data = transform_data(s);
-//    let rectangles = create_all_rectangles(&transformed_data);
-    let final_result = 0; //rectangles.iter().map(|(a, b)| (b.0.abs_diff(a.0) + 1) * (b.1.abs_diff(a.1) + 1)).max().unwrap();
+    let theater = transform_data(s);
+    let rectangles = theater.get_rectangles();
+    let final_result = rectangles.iter().map(|(a, b)| (b.x.abs_diff(a.x) + 1) * (b.y.abs_diff(a.y) + 1)).max().unwrap();
     final_result
 }
 
@@ -61,37 +61,6 @@ fn transform_data(data: &str) -> Theater {
             tiles.insert(Position { x, y });
         }
     }
-
-/****
- * In your list, every red tile is connected to the red tile before and after it by a straight line of green tiles.
- * The list wraps, so the first red tile is also connected to the last red tile.
- * Tiles that are adjacent in your list will always be on either the same row or the same column.
- *
- * => J'avais rate ca :)
-
-    let mut green_column = HashMap::new();
-    for x in min_x.unwrap()..=max_x.unwrap() {
-        let mut green_line = false;
-        for y in min_y.unwrap()..=min_y.unwrap() {
-            match vertexes.get(&Position { x, y }) {
-                Some(red_tile) => {
-                    tiles.insert(*red_tile);
-                    green_line = !green_line;
-                    green_column.entry(y).and_modify(|is_green: &mut bool| *is_green = !*is_green).or_insert(true);
-                },
-                None => {
-                    if green_line || *green_column.get(&y).unwrap_or(&false) {
-                        tiles.insert(Position { x, y });
-                    }
-                },
-            }
-
-
-            tiles.insert(Position { x, y });
-        }
-    }
-
-**/
 
     println!("{:?}", tiles);
 
