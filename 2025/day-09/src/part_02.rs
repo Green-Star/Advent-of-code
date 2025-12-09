@@ -1,4 +1,4 @@
-use std::{cmp::{max, min}, collections::{HashMap, HashSet}};
+use std::{cmp::{max, min}, collections::{HashMap, HashSet}, ops::Index};
 
 pub fn resolve(s: &str) -> usize {
     let transformed_data = transform_data(s);
@@ -106,22 +106,8 @@ fn transform_data(data: &str) -> Theater {
         println!("");
     }
 
-
     Theater { vertexes, tiles }
 }
-
-fn create_all_rectangles(vertexes: &Vec<(usize, usize)>) -> Vec<((usize, usize), (usize, usize))> {
-    let mut rectangles = vec![];
-
-    for (index, a) in vertexes.iter().enumerate() {
-        for b in &vertexes[index+1..] {
-            rectangles.push((*a, *b));
-        }
-    }
-
-    rectangles
-}
-
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 struct Position {
@@ -133,6 +119,36 @@ struct Position {
 struct Theater {
     vertexes: Vec<Position>,
     tiles: HashSet<Position>,
+}
+impl Theater {
+    fn get_rectangles(&self) -> Vec<(&Position, &Position)> {
+        let mut rectangles = vec![];
+
+        for (index, a) in self.vertexes.iter().enumerate() {
+            for c in &self.vertexes[index+1..] {
+                let b = Position { x: a.x, y: c.y };
+                let d = Position { x: c.x, y: a.y };
+
+                let is_y_valid = (min(a.y, c.y) ..= max(a.y, c.y))
+                    .flat_map(|y| vec![ Position { x: a.x, y }, Position { x: c.x, y } ])
+                    .all(|p| self.tiles.get(&p).is_some());
+                if is_y_valid == false { continue }
+
+                let is_x_valid = (min(a.x, c.x)..=(max(a.x, c.x)))
+                    .flat_map(|x| vec![ Position { x, y: a.y }, Position { x, y: c.y }])
+                    .all(|p| self.tiles.get(&p).is_some());
+                if is_x_valid == false { continue }
+
+                rectangles.push((a, c));
+            }
+
+        }
+
+        println!("Here's the rectangles");
+        println!("{:?}", rectangles);
+
+        rectangles
+    }
 }
 
 #[cfg(test)]
@@ -153,5 +169,32 @@ mod tests {
 ";
 
         assert_eq!(resolve(test_input), 24);
+    }
+
+
+    #[test]
+    fn test_combine_few_rectangles() {
+        let test_input = "\
+7,1
+11,1
+11,7
+9,7
+9,5
+2,5
+2,3
+7,3
+";
+        let mut test = transform_data(test_input);
+        assert_eq!(test.vertexes.len(), 8);
+        assert_eq!(test.tiles.len(), 46);
+
+        test.vertexes = vec![ Position { x: 7, y: 3 }, Position { x: 11, y: 1 }, Position { x: 3, y: 5 } ];
+        assert_eq!(test.get_rectangles().len(), 2);
+
+        test.vertexes = vec![ Position { x: 7, y: 3 }, Position { x: 11, y: 1 }, Position { x: 3, y: 5 }, Position { x: 11, y: 7 } ];
+        assert_eq!(test.get_rectangles().len(), 3);
+
+        test.vertexes = vec![ Position { x: 7, y: 3 }, Position { x: 11, y: 1 }, Position { x: 3, y: 5 }, Position { x: 11, y: 7 }, Position { x: 9, y: 7 } ];
+        assert_eq!(test.get_rectangles().len(), 5);
     }
 }
