@@ -1,4 +1,4 @@
-use std::{cmp::{max, min}, collections::HashSet};
+use std::{cmp::{max, min}, collections::HashSet, ops::{Index, IndexMut}};
 
 pub fn resolve(s: &str) -> usize {
     let theater = transform_data(s);
@@ -25,6 +25,30 @@ fn transform_data(data: &str) -> Theater {
         max_x = Some(max(vertex.x, max_x.unwrap_or(vertex.x)));
         max_y = Some(max(vertex.y, max_y.unwrap_or(vertex.y)));
     }
+
+    /*
+    let mut rectangles = vec![];
+    for (index, a) in vertexes.iter().enumerate() {
+        for b in &vertexes[index+1..] {
+            rectangles.push((a, b));
+        }
+    }
+    */
+    let mut edges =  vec![];
+    vertexes.windows(2).map(|w| (w[0], w[1])).for_each(|(from, to)| {
+        edges.push((from, to));
+    });
+    /* List is overlapping */
+    let first = vertexes[0];
+    let last = vertexes.last().unwrap();
+    edges.push((first, *last));
+
+//    println!("{} rectangles", rectangles.len());
+    println!("with {} edges", edges.len());
+
+    return Theater { vertexes, tiles: HashSet::new(), edges };
+
+    println!("Kill it!");
 
     /* Almost forget it:
     *
@@ -81,7 +105,7 @@ fn transform_data(data: &str) -> Theater {
         println!("");
     }
 
-    Theater { vertexes, tiles }
+    Theater { vertexes, tiles, edges: vec![] }
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
@@ -94,11 +118,13 @@ struct Position {
 struct Theater {
     vertexes: Vec<Position>,
     tiles: HashSet<Position>,
+    edges: Vec<(Position, Position)>
 }
 impl Theater {
     fn get_rectangles(&self) -> Vec<(&Position, &Position)> {
         let mut rectangles = vec![];
 
+        /*
         for (index, a) in self.vertexes.iter().enumerate() {
             for c in &self.vertexes[index+1..] {
                 let b = Position { x: a.x, y: c.y };
@@ -117,6 +143,44 @@ impl Theater {
                 rectangles.push((a, c));
             }
 
+        }
+        */
+
+        for (index, a) in self.vertexes.iter().enumerate() {
+            for c in &self.vertexes[index+1..] {
+                let min_x = min(a.x, c.x);
+                let max_x = max(a.x, c.x);
+                let min_y = min(a.y, c.y);
+                let max_y = max(a.y, c.y);
+
+                if self.edges.iter().any(|(x, y)| {
+                    let edge_min_x = min(x.x, y.x);
+                    let edge_max_x = max(x.x, y.x);
+                    let edge_min_y = min(x.y, y.y);
+                    let edge_max_y = max(x.y, y.y);
+/*
+                    let horizontal_collide = false;
+
+                    let vertical_collide = min_y > edge_min_y && max_y < edge_max_y;
+
+                    let vertical_collide = true;
+
+                    horizontal_collide || vertical_collide
+                    */
+
+                    let edge_is_right_of_r = edge_min_x >= max_x;
+                    let edge_is_left_of_r = edge_max_x <= min_x;
+                    let edge_is_above_r = edge_max_y <= min_y;
+                    let edge_is_below_r = edge_min_y >= max_y;
+
+                    let collide = !(edge_is_right_of_r || edge_is_left_of_r || edge_is_above_r || edge_is_below_r);
+                    if collide { println!("({a:?}-{c:?} collide with {x:?}-{y:?}") }
+
+                    collide
+                }) { continue }
+
+                rectangles.push((a, c));
+            }
         }
 
         println!("Here's the rectangles");
@@ -161,7 +225,7 @@ mod tests {
 ";
         let mut test = transform_data(test_input);
         assert_eq!(test.vertexes.len(), 8);
-        assert_eq!(test.tiles.len(), 46);
+//        assert_eq!(test.tiles.len(), 46);
 
         test.vertexes = vec![ Position { x: 7, y: 3 }, Position { x: 11, y: 1 }, Position { x: 3, y: 5 } ];
         assert_eq!(test.get_rectangles().len(), 2);
