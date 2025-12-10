@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 utils = {path = "../utils/"}
+z3 = {version="0.19.6", features = ["gh-release"]}
