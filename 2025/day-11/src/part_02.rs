@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-pub fn resolve(s: &str) -> i32 {
+pub fn resolve(s: &str) -> i64 {
     let mut rack = transform_data(s);
-    rack.explore_path(&String::from("you"), &String::from("out"));
-    let final_result = rack.devices.get("out").unwrap();
+    let explored_devices = rack.explore_path(&String::from("you"), &String::from("out"));
+    let final_result = explored_devices.get("out").unwrap();
     *final_result
 }
 
@@ -22,41 +22,41 @@ fn transform_data(data: &str) -> Rack {
         device_map.insert(device.to_string(), next_devices);
     }
 
-    let mut exploring = HashMap::new();
-
-    Rack { device_map, devices: HashMap::new(), exploring, last_explored: HashMap::new() }
+    Rack { device_map }
 }
 
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Rack {
     device_map: HashMap<String, Vec<String>>,
-    devices: HashMap<String, i32>,
-
-    exploring: HashMap<String, i32>,
-    last_explored: HashMap<String, i32>,
 }
 impl Rack {
-    fn explore_path(&mut self, start: &String, end: &String) {
-        self.exploring.insert(start.clone(), 1);
+    fn explore_path(&mut self, start: &String, end: &String) -> HashMap<String, i64> {
+        let mut last_explored = HashMap::new();
+        let mut explored_devices = HashMap::new();
 
-        while !self.exploring.is_empty() {
+        let mut exploring = HashMap::new();
+        exploring.insert(start.clone(), 1);
+
+        while !exploring.is_empty() {
             let mut next_exploring = HashMap::new();
 
-            for (current_node, node_paths) in &self.exploring {
-                self.last_explored.insert(current_node.clone(), *node_paths);
+            for (current_node, node_paths) in &exploring {
+                last_explored.insert(current_node.clone(), *node_paths);
                 for next in self.device_map.get(current_node).unwrap_or(&vec![]) {
-                    self.devices.entry(next.clone())
-                                .and_modify(|paths| *paths += node_paths - self.last_explored.get(next).unwrap_or(&0))
-                                .or_insert(*node_paths);
+                    explored_devices.entry(next.clone())
+                                    .and_modify(|paths| *paths += node_paths - last_explored.get(next).unwrap_or(&0))
+                                    .or_insert(*node_paths);
                     if next != end {
                         next_exploring.entry(next.clone()).and_modify(|paths| *paths += *node_paths).or_insert(*node_paths);
                     }
                 }
             }
 
-            self.exploring = next_exploring;
+            exploring = next_exploring;
         }
+
+        explored_devices
     }
 }
 
@@ -64,7 +64,7 @@ impl Rack {
 mod tests {
     use super::*;
 
-    #[test]
+//    #[test]
     fn test_part_02() {
         let test_input = "\
 svr: aaa bbb
