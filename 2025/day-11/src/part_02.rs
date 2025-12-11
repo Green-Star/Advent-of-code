@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 pub fn resolve(s: &str) -> i32 {
     let mut rack = transform_data(s);
-    rack.explore_path();
+    rack.explore_path(&String::from("you"), &String::from("out"));
     let final_result = rack.devices.get("out").unwrap();
     *final_result
 }
@@ -23,8 +23,6 @@ fn transform_data(data: &str) -> Rack {
     }
 
     let mut exploring = HashMap::new();
-    // Always starting at 'you' with 1 path
-    exploring.insert(String::from("you"), 1);
 
     Rack { device_map, devices: HashMap::new(), exploring, last_explored: HashMap::new() }
 }
@@ -39,7 +37,9 @@ struct Rack {
     last_explored: HashMap<String, i32>,
 }
 impl Rack {
-    fn explore_path(&mut self) {
+    fn explore_path(&mut self, start: &String, end: &String) {
+        self.exploring.insert(start.clone(), 1);
+
         while !self.exploring.is_empty() {
             let mut next_exploring = HashMap::new();
 
@@ -49,7 +49,7 @@ impl Rack {
                     self.devices.entry(next.clone())
                                 .and_modify(|paths| *paths += node_paths - self.last_explored.get(next).unwrap_or(&0))
                                 .or_insert(*node_paths);
-                    if next != "out" {
+                    if next != end {
                         next_exploring.entry(next.clone()).and_modify(|paths| *paths += *node_paths).or_insert(*node_paths);
                     }
                 }
@@ -65,6 +65,27 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_part_02() {
+        let test_input = "\
+svr: aaa bbb
+aaa: fft
+fft: ccc
+bbb: tty
+tty: ccc
+ccc: ddd eee
+ddd: hub
+hub: fff
+eee: dac
+dac: fff
+fff: ggg hhh
+ggg: out
+hhh: out
+";
+
+        assert_eq!(resolve(test_input), 2);
+    }
+
+        #[test]
     fn test_part_01() {
         let test_input = "\
 aaa: you hhh
