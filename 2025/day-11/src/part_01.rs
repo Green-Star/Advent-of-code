@@ -1,4 +1,4 @@
-use std::{collections::HashMap, hash::Hash, io::Cursor};
+use std::collections::HashMap;
 
 pub fn resolve(s: &str) -> i32 {
     let mut rack = transform_data(s);
