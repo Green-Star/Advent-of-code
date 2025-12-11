@@ -1,10 +1,25 @@
 use std::collections::HashMap;
 
 pub fn resolve(s: &str) -> i64 {
-    let mut rack = transform_data(s);
-    let explored_devices = rack.explore_path(&String::from("you"), &String::from("out"));
-    let final_result = explored_devices.get("out").unwrap();
-    *final_result
+    let rack = transform_data(s);
+
+    let subgraph = rack.explore_path(&String::from("svr"), &String::from("fft"));
+    let &svr_to_fft = subgraph.get("fft").unwrap_or(&0);
+    let subgraph = rack.explore_path(&String::from("fft"), &String::from("dac"));
+    let &fft_to_dac = subgraph.get("dac").unwrap_or(&0);
+    let subgraph = rack.explore_path(&String::from("dac"), &String::from("out"));
+    let &dac_to_out = subgraph.get("out").unwrap_or(&0);
+
+
+    let subgraph = rack.explore_path(&String::from("svr"), &String::from("dac"));
+    let &srv_to_dac = subgraph.get("dac").unwrap_or(&0);
+    let subgraph = rack.explore_path(&String::from("dac"), &String::from("fft"));
+    let &dac_to_fft = subgraph.get("fft").unwrap_or(&0);
+    let subgraph = rack.explore_path(&String::from("fft"), &String::from("out"));
+    let &fft_to_out = subgraph.get("out").unwrap_or(&0);
+
+    let final_result = (svr_to_fft * fft_to_dac * dac_to_out) + (srv_to_dac * dac_to_fft * fft_to_out);
+    final_result
 }
 
 fn transform_data(data: &str) -> Rack {
@@ -31,7 +46,7 @@ struct Rack {
     device_map: HashMap<String, Vec<String>>,
 }
 impl Rack {
-    fn explore_path(&mut self, start: &String, end: &String) -> HashMap<String, i64> {
+    fn explore_path(&self, start: &String, end: &String) -> HashMap<String, i64> {
         let mut last_explored = HashMap::new();
         let mut explored_devices = HashMap::new();
 
@@ -64,7 +79,7 @@ impl Rack {
 mod tests {
     use super::*;
 
-//    #[test]
+    #[test]
     fn test_part_02() {
         let test_input = "\
 svr: aaa bbb
@@ -85,22 +100,42 @@ hhh: out
         assert_eq!(resolve(test_input), 2);
     }
 
-        #[test]
-    fn test_part_01() {
+
+    #[test]
+    fn test_part_02_details() {
         let test_input = "\
-aaa: you hhh
-you: bbb ccc
-bbb: ddd eee
-ccc: ddd eee fff
-ddd: ggg
-eee: out
-fff: out
+svr: aaa bbb
+aaa: fft
+fft: ccc
+bbb: tty
+tty: ccc
+ccc: ddd eee
+ddd: hub
+hub: fff
+eee: dac
+dac: fff
+fff: ggg hhh
 ggg: out
-hhh: ccc fff iii
-iii: out
+hhh: out
 ";
 
-        assert_eq!(resolve(test_input), 5);
+        let rack = transform_data(test_input);
+        /* Test SRV -> FFT -> DAC -> OUT */
+        let explored_devices = rack.explore_path(&String::from("svr"), &String::from("fft"));
+        assert_eq!(*explored_devices.get("fft").unwrap_or(&0), 1);
+        let explored_devices = rack.explore_path(&String::from("fft"), &String::from("dac"));
+        assert_eq!(*explored_devices.get("dac").unwrap_or(&0), 1);
+        let explored_devices = rack.explore_path(&String::from("dac"), &String::from("out"));
+        assert_eq!(*explored_devices.get("out").unwrap_or(&0), 2);
+
+        /* And test SRV -> DAC -> FFT -> OUT */
+        let explored_devices = rack.explore_path(&String::from("svr"), &String::from("dac"));
+        assert_eq!(*explored_devices.get("dac").unwrap_or(&0), 2);
+        let explored_devices = rack.explore_path(&String::from("dac"), &String::from("fft"));
+        assert_eq!(*explored_devices.get("fft").unwrap_or(&0), 0);
+        let explored_devices = rack.explore_path(&String::from("fft"), &String::from("out"));
+        assert_eq!(*explored_devices.get("out").unwrap_or(&0), 4);
+
     }
 
     #[test]
@@ -114,7 +149,9 @@ e: f
 b: c
 ";
 
-        assert_eq!(resolve(test_input), 3);
+        let rack = transform_data(test_input);
+        let explored_devices = rack.explore_path(&String::from("you"), &String::from("out"));
+        assert_eq!(*explored_devices.get("out").unwrap(), 3);
     }
     #[test]
     fn test_smaller_graph_02() {
@@ -128,7 +165,9 @@ e: g
 g: d
 ";
 
-        assert_eq!(resolve(test_input), 3);
+        let rack = transform_data(test_input);
+        let explored_devices = rack.explore_path(&String::from("you"), &String::from("out"));
+        assert_eq!(*explored_devices.get("out").unwrap(), 3);
     }
     #[test]
     fn test_smallest_graph_02() {
@@ -138,6 +177,8 @@ a: out
 b: a
 ";
 
-        assert_eq!(resolve(test_input), 2);
+        let rack = transform_data(test_input);
+        let explored_devices = rack.explore_path(&String::from("you"), &String::from("out"));
+        assert_eq!(*explored_devices.get("out").unwrap(), 2);
     }
 }
