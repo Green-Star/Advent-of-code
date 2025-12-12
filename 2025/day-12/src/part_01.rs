@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-
 pub fn resolve(s: &str) -> usize {
     let (shapes, areas) = transform_data(s);
 
@@ -60,14 +59,6 @@ fn transform_data(data: &str) -> (Vec<usize>, Vec<Area>) {
     (shapes, areas)
 }
 
-
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct AreaLine {
-    used_space: usize,
-    total_space: usize,
-}
-
 fn get_present_volume(d: Vec<Vec<char>>) -> usize {
     d.iter().map(|l| l.iter().filter(|c| **c == '#').count()).sum()
 }
@@ -76,9 +67,6 @@ fn get_present_volume(d: Vec<Vec<char>>) -> usize {
 struct Area {
     size: usize,
     presents: Vec<usize>,
-
-    presents_to_fit: Vec<usize>,
-    space: Vec<AreaLine>,
 }
 impl Area {
     fn can_all_shapes_fit(&self, shapes: &Vec<usize>) -> bool {
@@ -94,11 +82,9 @@ impl Area {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn test_part_01() {
-        let test_input = "\
+        let _ = "\
 0:
 ###
 ##.
