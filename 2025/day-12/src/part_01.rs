@@ -2,23 +2,28 @@ use std::collections::HashMap;
 
 pub fn resolve(s: &str) -> i32 {
     let (shapes, areas) = transform_data(s);
+    //println!("{:?}", shapes);
+    println!("{:?}", areas);
+
     let final_result = 0;
     final_result
 }
 
 fn transform_data(data: &str) -> (HashMap<usize, Vec<Shape>>, Vec<Area>) {
     let mut shapes = HashMap::new();
+    let mut areas = vec![];
 
     let mut shape_index = 0;
     let mut shape_description: Vec<Vec<char>> = vec![];
     for line in data.lines() {
         // If the line contains a ":" -> Either a shape index or an area descrption
         if line.contains(":") {
+            let mut iter = line.split(":");
             // Get only the interesting part
-            let s = line.split(":").next().unwrap();
+            let s = iter.next().unwrap();
             match s.contains("x") {
                 true => {
-                    /* Area description */
+                    /* Area description - see below */
                 },
                 false => {
                     /* Shape index */
@@ -26,7 +31,13 @@ fn transform_data(data: &str) -> (HashMap<usize, Vec<Shape>>, Vec<Area>) {
                 }
             }
             if s.contains("x") {
+                let mut ss = s.split("x");
+                let (area_length, area_height): (usize, usize) = (ss.next().unwrap().parse().unwrap(), ss.last().unwrap().parse().unwrap());
+                let gifts = utils::core::parse_number_list(iter.last().unwrap());
 
+                let space = (0..area_height).map(|_| (0, area_length)).collect();
+
+                areas.push(Area { presents: gifts.clone(), presents_to_fit: gifts.clone(), space });
             }
 
             continue;
@@ -43,7 +54,7 @@ fn transform_data(data: &str) -> (HashMap<usize, Vec<Shape>>, Vec<Area>) {
         shape_description.push(line.chars().map(|c| c).collect());
     }
 
-    (shapes, vec![])
+    (shapes, areas)
 }
 
 
