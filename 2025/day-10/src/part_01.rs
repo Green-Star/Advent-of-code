@@ -1,6 +1,6 @@
-use std::iter;
+use std::{iter, ops::Add, time::Instant};
 
-use z3::{Optimize, SatResult, Solver, ast::Int};
+use z3::{Context, Optimize, SatResult, Solver, ast::{Bool, Int}};
 
 pub fn resolve(s: &str) -> usize {
     let transformed_data = transform_data(s);
@@ -60,6 +60,126 @@ fn solver() {
     } else {
         println!("Unsat");
     }
+
+
+    println!("Nouvel exemple non général");
+    let problem = Problem::from("[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}");
+    println!("----");
+    println!("Pour info: {:?}", problem);
+
+    let optimizer = Optimize::new();
+
+//    let target: Vec<Bool> = problem.target.iter().enumerate().map(|(i, b)| Bool::new_const(format!("target_{i}"))).collect();
+
+    let buttons: Vec<Bool> = problem.buttons.iter().enumerate().map(|(i, _)| Bool::new_const(format!("button_{i}"))).collect();
+    (0..problem.target.len()).for_each(|i| {
+        let triggers: Vec<_> = problem.buttons
+                                            .iter()
+                                            .enumerate()
+                                            .filter(|(_, b)| b.contains(&i))
+                                            .map(|(i, _)| &buttons[i])
+                                            .collect();
+        let sum = triggers.iter().fold(Int::from_i64(0), |acc, b| {
+            acc.add(&b.ite(&Int::from_i64(1), &Int::from_i64(0)))
+        });
+
+        let activated = sum.modulo(2).eq(1);
+
+        optimizer.assert(&activated.eq(Bool::from_bool(problem.target[i])));
+    });
+
+    let presses = Int::add(&buttons.iter().map(|b| b.ite(&Int::from_i64(1), &Int::from_i64(0))).collect::<Vec<_>>());
+    optimizer.minimize(&presses);
+
+    println!("{:?}", optimizer);
+    match optimizer.check(&[]) {
+        SatResult::Sat => {
+            println!("Trouvé !!!");
+            let model = optimizer.get_model().unwrap();
+            let result = model.eval(&presses, true).unwrap();
+
+            println!("Minimal presses found: {result}");
+        },
+        _ => { println!("No solution"); }
+    }
+
+
+
+    println!("----");
+    println!("2nd example");
+    let problem = Problem::from("[...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}");
+
+    let optimizer = Optimize::new();
+
+    let buttons: Vec<Bool> = problem.buttons.iter().enumerate().map(|(i, _)| Bool::new_const(format!("button_{i}"))).collect();
+    (0..problem.target.len()).for_each(|i| {
+        let triggers: Vec<_> = problem.buttons
+                                            .iter()
+                                            .enumerate()
+                                            .filter(|(_, b)| b.contains(&i))
+                                            .map(|(i, _)| &buttons[i])
+                                            .collect();
+        let sum = triggers.iter().fold(Int::from_i64(0), |acc, b| {
+            acc.add(&b.ite(&Int::from_i64(1), &Int::from_i64(0)))
+        });
+
+        let activated = sum.modulo(2).eq(1);
+
+        optimizer.assert(&activated.eq(Bool::from_bool(problem.target[i])));
+    });
+
+    let presses = Int::add(&buttons.iter().map(|b| b.ite(&Int::from_i64(1), &Int::from_i64(0))).collect::<Vec<_>>());
+    optimizer.minimize(&presses);
+
+    match optimizer.check(&[]) {
+        SatResult::Sat => {
+            let model = optimizer.get_model().unwrap();
+            let result = model.eval(&presses, true).unwrap();
+
+            println!("Minimal presses found: {result}");
+        },
+        _ => { println!("No solution"); }
+    }
+
+
+
+
+    println!("----");
+    println!("Third example");
+    let problem = Problem::from("[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}");
+
+    let optimizer = Optimize::new();
+
+    let buttons: Vec<Bool> = problem.buttons.iter().enumerate().map(|(i, _)| Bool::new_const(format!("button_{i}"))).collect();
+    (0..problem.target.len()).for_each(|i| {
+        let triggers: Vec<_> = problem.buttons
+                                            .iter()
+                                            .enumerate()
+                                            .filter(|(_, b)| b.contains(&i))
+                                            .map(|(i, _)| &buttons[i])
+                                            .collect();
+        let sum = triggers.iter().fold(Int::from_i64(0), |acc, b| {
+            acc.add(&b.ite(&Int::from_i64(1), &Int::from_i64(0)))
+        });
+
+        let activated = sum.modulo(2).eq(1);
+
+        optimizer.assert(&activated.eq(Bool::from_bool(problem.target[i])));
+    });
+
+    let presses = Int::add(&buttons.iter().map(|b| b.ite(&Int::from_i64(1), &Int::from_i64(0))).collect::<Vec<_>>());
+    optimizer.minimize(&presses);
+
+    match optimizer.check(&[]) {
+        SatResult::Sat => {
+            let model = optimizer.get_model().unwrap();
+            let result = model.eval(&presses, true).unwrap();
+
+            println!("Minimal presses found: {result}");
+        },
+        _ => { println!("No solution"); }
+    }
+
 }
 
 
