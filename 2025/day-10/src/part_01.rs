@@ -2,16 +2,9 @@ use std::ops::Add;
 
 use z3::{Optimize, SatResult, ast::{Bool, Int}};
 
-pub fn resolve(s: &str) -> usize {
+pub fn resolve(s: &str) -> i64 {
     let transformed_data = transform_data(s);
-
-
-println!("Et maintenant en dheors: ");
-    println!("21: {:?}", transformed_data[0].solve());
-    println!("21: {:?}", transformed_data[1].solve());
-    println!("21: {:?}", transformed_data[2].solve());
-
-    let final_result = 0;
+    let final_result = transformed_data.iter().map(|p| p.solve()).map(|o| o.unwrap_or(0)).sum();
     final_result
 }
 
@@ -137,7 +130,7 @@ mod tests {
 [.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
 ";
 
-        assert_eq!(resolve(test_input), 7);
+        assert_eq!(resolve(test_input), 2);
     }
     #[test]
     fn test_second_input() {
@@ -145,7 +138,7 @@ mod tests {
 [...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}
 ";
 
-        assert_eq!(resolve(test_input), 7);
+        assert_eq!(resolve(test_input), 3);
     }
     #[test]
     fn test_third_input() {
@@ -153,6 +146,6 @@ mod tests {
 [.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}
 ";
 
-        assert_eq!(resolve(test_input), 7);
+        assert_eq!(resolve(test_input), 2);
     }
 }
