@@ -34,7 +34,7 @@ fn transform_data(data: &str) -> (Vec<usize>, Vec<Area>) {
                 let (area_length, area_height): (usize, usize) = (ss.next().unwrap().parse().unwrap(), ss.last().unwrap().parse().unwrap());
                 let presents = utils::core::parse_number_list(iter.last().unwrap());
 
-                areas.push(Area { size: area_length * area_height, presents, presents_to_fit: vec![], space: vec![] });
+                areas.push(Area { size: area_length * area_height, presents });
             }
 
             continue;
