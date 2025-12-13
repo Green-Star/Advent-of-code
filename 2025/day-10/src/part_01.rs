@@ -3,13 +3,11 @@ use std::ops::Add;
 use z3::{Optimize, SatResult, ast::{Bool, Int}};
 
 pub fn resolve(s: &str) -> i64 {
-    let transformed_data = transform_data(s);
-    let final_result = transformed_data.iter().map(|p| p.solve()).map(|o| o.unwrap_or(0)).sum();
-    final_result
-}
-
-fn transform_data(data: &str) -> Vec<Problem> {
-    data.lines().map(|s| Problem::from(s)).collect()
+    s.lines()
+        .map(|l| Problem::from(l))
+        .map(|p| p.solve())
+        .map(|o| o.unwrap_or(0))
+        .sum()
 }
 
 
