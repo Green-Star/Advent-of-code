@@ -16,7 +16,7 @@ struct Problem {
     target: Vec<bool>,
 
     buttons: Vec<Vec<usize>>,
-    joltage: Vec<i32>,
+    joltage: Vec<i64>,
 }
 impl Problem {
     fn from(s: &str) -> Self {
@@ -61,7 +61,7 @@ impl Problem {
         let sanitized: Vec<String> = v.iter().map(|&s| s.replace(&['(',')'][..], "")).collect();
         sanitized.iter().map(|s| utils::core::parse_comma_number_list(s)).collect()
     }
-    fn parse_joltage(s: &str) -> Vec<i32> {
+    fn parse_joltage(s: &str) -> Vec<i64> {
         let sanitized = s.replace(&['{','}'][..], "");
         utils::core::parse_comma_number_list(&sanitized)
     }
@@ -70,12 +70,15 @@ impl Problem {
         let optimizer = Optimize::new();
 
         // Create Z3 variables (one for each button to press)
-        let buttons: Vec<Bool> = self.buttons.iter().enumerate().map(|(i, _)| Bool::new_const(format!("button_{i}"))).collect();
-        // For each target value
+        let buttons: Vec<Int> = self.buttons.iter().enumerate().map(|(i, _)| Int::new_const(format!("button_{i}"))).collect();
+        // assert button can't be "negatively" pressed
+        buttons.iter().for_each(|b| optimizer.assert(&b.ge(0)));
+
+        // For each joltage value
         //  retrieve all the buttons referencing it
-        //  sum the number of times these buttons get pressed to determine the value of the boolean (for this target)
-        //  assert the boolean has to be equal to the corresponding target boolean
-        for (index, target) in self.target.iter().enumerate() {
+        //  sum the number of times these buttons get pressed
+        //  assert the boolean has to be equal to the corresponding joltage value
+        for (index, joltage) in self.joltage.iter().enumerate() {
             let triggers: Vec<_> = self.buttons
                                             .iter()
                                             .enumerate()
@@ -83,23 +86,20 @@ impl Problem {
                                             .map(|(i, _)| &buttons[i])
                                             .collect();
             let sum = triggers.iter().fold(Int::from_i64(0), |acc, b| {
-                acc.add(&b.ite(&Int::from_i64(1), &Int::from_i64(0)))
+                acc.add(*b)
             });
 
-            let activated = sum.modulo(2).eq(1);
-
-            optimizer.assert(&activated.eq(Bool::from_bool(*target)));
+            optimizer.assert(&sum.eq(Int::from_i64(*joltage)));
         }
 
         // Get the number of total presses on the button and minimize it
-        let presses = Int::add(&buttons.iter().map(|b| b.ite(&Int::from_i64(1), &Int::from_i64(0))).collect::<Vec<_>>());
+        let presses = Int::add(&buttons.iter().map(|b| b).collect::<Vec<_>>());
         optimizer.minimize(&presses);
 
         match optimizer.check(&[]) {
             SatResult::Sat => {
                 let model = optimizer.get_model().unwrap();
                 let result = model.eval(&presses, true).unwrap();
-
                 Some(result.as_i64().unwrap())
             },
             _ => { None }
@@ -119,7 +119,7 @@ mod tests {
 [.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}
 ";
 
-        assert_eq!(resolve(test_input), 7);
+        assert_eq!(resolve(test_input), 33);
     }
 
     #[test]
@@ -128,7 +128,7 @@ mod tests {
 [.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
 ";
 
-        assert_eq!(resolve(test_input), 2);
+        assert_eq!(resolve(test_input), 10);
     }
     #[test]
     fn test_second_input() {
@@ -136,7 +136,7 @@ mod tests {
 [...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}
 ";
 
-        assert_eq!(resolve(test_input), 3);
+        assert_eq!(resolve(test_input), 12);
     }
     #[test]
     fn test_third_input() {
@@ -144,6 +144,6 @@ mod tests {
 [.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}
 ";
 
-        assert_eq!(resolve(test_input), 2);
+        assert_eq!(resolve(test_input), 11);
     }
 }
