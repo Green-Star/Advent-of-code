@@ -1,6 +1,6 @@
 use std::ops::Add;
 
-use z3::{Optimize, SatResult, ast::{Bool, Int}};
+use z3::{Optimize, SatResult, ast::Int};
 
 pub fn resolve(s: &str) -> i64 {
     s.lines()
